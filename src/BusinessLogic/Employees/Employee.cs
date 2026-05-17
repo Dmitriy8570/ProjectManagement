@@ -14,7 +14,11 @@ public class Employee
     // Navigation: projects this employee participates in as a regular member.
     // Project management (where this employee is the PM) is modelled separately
     // on the Project side, so it is intentionally not exposed here.
-    public List<Project> Projects { get; private set; } = new();
+    //
+    // Exposed as IReadOnlyCollection backed by a private list so callers cannot
+    // mutate the relationship bypassing the aggregate root (Project).
+    private readonly List<Project> _projects = new();
+    public IReadOnlyCollection<Project> Projects => _projects;
 
     // Required by EF Core to rehydrate the entity from the database.
     // Do not use from domain code — always go through the public constructor

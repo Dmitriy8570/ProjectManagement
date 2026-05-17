@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using BusinessLogic.Common;
 using MediatR;
 
 namespace BusinessLogic.Employees.Commands;
@@ -40,6 +41,13 @@ public class CreateEmployeeCommandHandler
 
     public async Task<CreateEmployeeResponse> Handle(CreateEmployeeCommand request, CancellationToken ct)
     {
+        // Pre-check unique email so the caller gets a clean 400-style error
+        // instead of a raw DbUpdateException from the unique-index violation.
+        // A race window still exists; the DB constraint is the ultimate guard.
+        if (await _employeeRepository.EmailExistsAsync(request.Data.Email, excludingId: null, ct))
+            throw new DomainValidationException(
+                $"An employee with email '{request.Data.Email}' already exists.");
+
         // Domain validation (non-blank fields, valid email) happens inside the
         // constructor, so we don't repeat it here.
         var employee = new Employee(

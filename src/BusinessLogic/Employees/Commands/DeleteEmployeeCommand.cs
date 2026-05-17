@@ -19,10 +19,16 @@ public class DeleteEmployeeCommandHandler : IRequestHandler<DeleteEmployeeComman
 
     public async Task Handle(DeleteEmployeeCommand request, CancellationToken ct)
     {
-        if (await _employeeRepository.GetEmployeeByIdAsync(request.Id, ct) is null)
-            throw new EntityNotFoundException(nameof(Employee), request.Id);
+        // The PM foreign key is configured as RESTRICT, so deleting an
+        // employee who currently manages a project would otherwise surface
+        // as a raw DbUpdateException. Surface it as a domain error instead.
+        if (await _employeeRepository.IsProjectManagerAsync(request.Id, ct))
+            throw new DomainValidationException(
+                "Cannot delete an employee who is currently a project manager.");
 
-        await _employeeRepository.DeleteEmployeeAsync(request.Id, ct);
-        await _employeeRepository.SaveAsync(ct);
+        var deleted = await _employeeRepository.DeleteEmployeeAsync(request.Id, ct);
+
+        if (!deleted)
+            throw new EntityNotFoundException(nameof(Employee), request.Id);
     }
 }

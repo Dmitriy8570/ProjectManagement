@@ -50,6 +50,17 @@ public class EditEmployeeCommandHandler : IRequestHandler<EditEmployeeCommand, E
         var employee = await _employeeRepository.GetEmployeeByIdAsync(request.Data.Id, ct)
             ?? throw new EntityNotFoundException(nameof(Employee), request.Data.Id);
 
+        // Pre-check unique email — only when the caller is actually changing it,
+        // and only against other employees. Race window is acceptable here
+        // because the DB unique index is still the ultimate guard.
+        if (request.Data.Email is not null &&
+            !string.Equals(request.Data.Email, employee.Email, StringComparison.OrdinalIgnoreCase) &&
+            await _employeeRepository.EmailExistsAsync(request.Data.Email, excludingId: employee.Id, ct))
+        {
+            throw new DomainValidationException(
+                $"An employee with email '{request.Data.Email}' already exists.");
+        }
+
         employee.Update(
             firstName: request.Data.FirstName,
             lastName: request.Data.LastName,

@@ -19,10 +19,9 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand>
 
     public async Task Handle(DeleteProjectCommand request, CancellationToken ct)
     {
-        if (await _projectRepository.GetProjectByIdAsync(request.Id, ct) is null)
-            throw new EntityNotFoundException(nameof(Project), request.Id);
+        var deleted = await _projectRepository.DeleteProjectAsync(request.Id, ct);
 
-        await _projectRepository.DeleteProjectAsync(request.Id, ct);
-        await _projectRepository.SaveAsync(ct);
+        if (!deleted)
+            throw new EntityNotFoundException(nameof(Project), request.Id);
     }
 }

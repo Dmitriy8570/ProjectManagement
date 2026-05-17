@@ -66,15 +66,22 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
         var projectManager = await _employeeRepository.GetEmployeeByIdAsync(data.ProjectManagerId, ct)
             ?? throw new EntityNotFoundException(nameof(Employee), data.ProjectManagerId);
 
-        // Resolve all participants up-front so a bad id fails fast, before
-        // we touch the database with a half-built project.
-        var participants = new List<Employee>(capacity: data.EmployeeIds.Count);
-        foreach (var employeeId in data.EmployeeIds.Distinct())
-        {
-            var employee = await _employeeRepository.GetEmployeeByIdAsync(employeeId, ct)
-                ?? throw new EntityNotFoundException(nameof(Employee), employeeId);
+        // PM and participants are disjoint sets by domain invariant; quietly
+        // drop the PM from the participant list rather than failing the
+        // request — the wizard's two steps are filled independently.
+        var participantIds = data.EmployeeIds
+            .Where(id => id != data.ProjectManagerId)
+            .Distinct()
+            .ToArray();
 
-            participants.Add(employee);
+        // Resolve all participants in one round-trip so a bad id fails fast,
+        // before we touch the database with a half-built project.
+        var participants = await _employeeRepository.GetEmployeesByIdsAsync(participantIds, ct);
+        if (participants.Count != participantIds.Length)
+        {
+            var foundIds = participants.Select(e => e.Id).ToHashSet();
+            var missingId = participantIds.First(id => !foundIds.Contains(id));
+            throw new EntityNotFoundException(nameof(Employee), missingId);
         }
 
         var project = new Project(

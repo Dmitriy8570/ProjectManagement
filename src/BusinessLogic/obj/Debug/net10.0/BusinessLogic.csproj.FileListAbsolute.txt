@@ -10,3 +10,4 @@ C:\Users\barda\OneDrive\Desktop\ТЗ Sibers\ProjectManagement\src\BusinessLogic\
 C:\Users\barda\OneDrive\Desktop\ТЗ Sibers\ProjectManagement\src\BusinessLogic\obj\Debug\net10.0\refint\BusinessLogic.dll
 C:\Users\barda\OneDrive\Desktop\ТЗ Sibers\ProjectManagement\src\BusinessLogic\obj\Debug\net10.0\BusinessLogic.pdb
 C:\Users\barda\OneDrive\Desktop\ТЗ Sibers\ProjectManagement\src\BusinessLogic\obj\Debug\net10.0\ref\BusinessLogic.dll
+C:\Users\barda\OneDrive\Desktop\ТЗ Sibers\ProjectManagement\src\BusinessLogic\obj\Debug\net10.0\BusinessLogic.sourcelink.json
