@@ -28,12 +28,5 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.HasIndex(x => x.Email)
             .IsUnique();
-
-        // Read-only navigation backed by a private _projects field on the
-        // entity; EF Core needs to be told to write through the field so
-        // rehydration populates the list.
-        builder.Metadata
-            .FindNavigation(nameof(Employee.Projects))!
-            .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }
