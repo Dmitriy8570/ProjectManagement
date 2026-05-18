@@ -4,4 +4,7 @@
     <Project Path="src/DataAccess/DataAccess.csproj" />
     <Project Path="src/Presentation/Presentation.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Tests.BusinessLogic/Tests.BusinessLogic.csproj" Id="bf3d3abd-982a-4d90-b4f2-3864a73d2013" />
+  </Folder>
 </Solution>
