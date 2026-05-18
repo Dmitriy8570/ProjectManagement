@@ -11,8 +11,6 @@ namespace BusinessLogic.Projects.Commands;
 /// </summary>
 public record EditProjectRequest
 {
-    [Required]
-    public int Id { get; init; }
 
     [MaxLength(200)]
     public string? Name { get; init; }
@@ -35,6 +33,7 @@ public record EditProjectRequest
 public record EditProjectCommand : IRequest<EditProjectResponse>
 {
     public EditProjectRequest Data { get; init; } = default!;
+    public int Id { get; init; }
 }
 
 public record EditProjectResponse
@@ -59,8 +58,8 @@ public class EditProjectCommandHandler : IRequestHandler<EditProjectCommand, Edi
     {
         var data = request.Data;
 
-        var project = await _projectRepository.GetProjectByIdAsync(data.Id, ct)
-            ?? throw new EntityNotFoundException(nameof(Project), data.Id);
+        var project = await _projectRepository.GetProjectByIdAsync(request.Id, ct)
+            ?? throw new EntityNotFoundException(nameof(Project), request.Id);
 
         // Only resolve the new PM if the caller actually wants to change them.
         Employee? newProjectManager = null;

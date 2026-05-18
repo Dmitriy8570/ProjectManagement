@@ -21,7 +21,11 @@ public class EmployeeRepository : IEmployeeRepository
             // EF.Functions.Like maps to a case-insensitive LIKE on SQL Server
             // (default CI collation) and on SQLite with NOCASE; using it
             // keeps the dropdown predictable across both supported providers.
-            var pattern = $"%{term.Trim()}%";
+            var escaped = term.Trim()
+              .Replace("\\", "\\\\")
+              .Replace("%", "\\%")
+              .Replace("_", "\\_");
+            var pattern = $"%{escaped}%";
             query = query.Where(e =>
                 EF.Functions.Like(e.FirstName, pattern) ||
                 EF.Functions.Like(e.LastName, pattern) ||
@@ -39,7 +43,6 @@ public class EmployeeRepository : IEmployeeRepository
 
     public Task<Employee?> GetEmployeeByIdAsync(int id, CancellationToken ct) =>
         _db.Employees
-            .Include(e => e.Projects)
             .FirstOrDefaultAsync(e => e.Id == id, ct);
 
     public async Task<IReadOnlyList<Employee>> GetEmployeesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct)

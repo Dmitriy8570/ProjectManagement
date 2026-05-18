@@ -47,12 +47,12 @@ public class EmployeesController : ControllerBase
         return NoContent();
     }
 
-    [HttpPut]
+    [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(EditEmployeeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<EditEmployeeResponse>> UpdateEmployee([FromBody] EditEmployeeRequest request, CancellationToken ct)
+    public async Task<ActionResult<EditEmployeeResponse>> UpdateEmployee(int id, [FromBody] EditEmployeeRequest request, CancellationToken ct)
     {
-        var command = new EditEmployeeCommand { Data = request };
+        var command = new EditEmployeeCommand { Data = request, Id = id };
         var result = await _mediator.Send(command, ct);
         return Ok(result);
     }
@@ -62,7 +62,7 @@ public class EmployeesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<EmployeeDto>>> ListEmployees([FromQuery]string? term, [FromQuery]int limit, CancellationToken ct)
     {
-        var query = new SearchEmployeesQuery { Term = term };
+        var query = new SearchEmployeesQuery { Term = term, Limit = limit };    
         var result = await _mediator.Send(query, ct);
         return Ok(result);
     }

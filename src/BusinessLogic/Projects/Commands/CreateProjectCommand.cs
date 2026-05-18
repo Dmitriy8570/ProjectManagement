@@ -16,20 +16,18 @@ public record CreateProjectRequest
     [Required, MaxLength(200)]
     public string ExecutingCompany { get; init; } = default!;
 
-    [Required]
     public DateTime StartDate { get; init; }
 
-    [Required]
     public DateTime EndDate { get; init; }
 
-    [Required]
+    [Range(0, int.MaxValue)]
     public int ProjectManagerId { get; init; }
 
     // Members are optional: a freshly-created project may start with just a
     // project manager and have participants assigned later.
     public List<int> EmployeeIds { get; init; } = new();
 
-    [Required, Range(0, int.MaxValue)]
+    [Range(0, int.MaxValue)]
     public int Priority { get; init; }
 }
 

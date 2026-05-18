@@ -4,10 +4,15 @@ using MediatR;
 
 namespace BusinessLogic.Projects.Commands;
 
-public record AssignEmployeeToProjectCommand : IRequest
+public record AssignEmployeeToProjectRequest
 {
     public int ProjectId { get; init; }
     public int EmployeeId { get; init; }
+}
+
+public record AssignEmployeeToProjectCommand : IRequest
+{
+    public AssignEmployeeToProjectRequest Data { get; init; } = default!;
 }
 
 public class AssignEmployeeToProjectCommandHandler : IRequestHandler<AssignEmployeeToProjectCommand>
@@ -25,11 +30,11 @@ public class AssignEmployeeToProjectCommandHandler : IRequestHandler<AssignEmplo
 
     public async Task Handle(AssignEmployeeToProjectCommand request, CancellationToken ct)
     {
-        var project = await _projectRepository.GetProjectByIdAsync(request.ProjectId, ct)
-            ?? throw new EntityNotFoundException(nameof(Project), request.ProjectId);
+        var project = await _projectRepository.GetProjectByIdAsync(request.Data.ProjectId, ct)
+            ?? throw new EntityNotFoundException(nameof(Project), request.Data.ProjectId);
 
-        var employee = await _employeeRepository.GetEmployeeByIdAsync(request.EmployeeId, ct)
-            ?? throw new EntityNotFoundException(nameof(Employee), request.EmployeeId);
+        var employee = await _employeeRepository.GetEmployeeByIdAsync(request.Data.EmployeeId, ct)
+            ?? throw new EntityNotFoundException(nameof(Employee), request.Data.EmployeeId);
 
         // Project.AddEmployee is idempotent — re-assigning an existing member
         // is a no-op rather than an error, which is the friendly behavior for

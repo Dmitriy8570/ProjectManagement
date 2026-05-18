@@ -10,8 +10,6 @@ namespace BusinessLogic.Employees.Commands;
 /// </summary>
 public record EditEmployeeRequest
 {
-    [Required]
-    public int Id { get; init; }
 
     [MaxLength(100)]
     public string? FirstName { get; init; }
@@ -29,6 +27,7 @@ public record EditEmployeeRequest
 public record EditEmployeeCommand : IRequest<EditEmployeeResponse>
 {
     public EditEmployeeRequest Data { get; init; } = default!;
+    public int Id { get; init; }
 }
 
 public record EditEmployeeResponse
@@ -47,8 +46,8 @@ public class EditEmployeeCommandHandler : IRequestHandler<EditEmployeeCommand, E
 
     public async Task<EditEmployeeResponse> Handle(EditEmployeeCommand request, CancellationToken ct)
     {
-        var employee = await _employeeRepository.GetEmployeeByIdAsync(request.Data.Id, ct)
-            ?? throw new EntityNotFoundException(nameof(Employee), request.Data.Id);
+        var employee = await _employeeRepository.GetEmployeeByIdAsync(request.Id, ct)
+            ?? throw new EntityNotFoundException(nameof(Employee), request.Id);
 
         // Pre-check unique email — only when the caller is actually changing it,
         // and only against other employees. Race window is acceptable here
