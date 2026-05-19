@@ -2,7 +2,6 @@
 using BusinessLogic.Employees.Commands;
 using BusinessLogic.Employees.Queries;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers;

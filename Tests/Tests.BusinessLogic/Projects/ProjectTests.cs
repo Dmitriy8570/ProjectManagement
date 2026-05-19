@@ -2,16 +2,13 @@ using BusinessLogic.Common;
 using BusinessLogic.Employees;
 using BusinessLogic.Projects;
 
-namespace Tests.BusinessLogic;
+namespace Tests.BusinessLogic.Projects;
 
 public class ProjectTests
 {
     private static readonly DateTime DefaultStart = new(2024, 1, 1);
     private static readonly DateTime DefaultEnd = new(2024, 12, 31);
 
-    // Employee.Id is settable only by EF Core (private setter), so unit-test
-    // employees would otherwise all share Id == 0 and trip the PM/participant
-    // disjointness check. Reflection is the standard way around that.
     private static Employee CreateEmployee(int id = 0, string email = "person@example.com")
     {
         var employee = new Employee("First", "Last", "Patronymic", email);
@@ -20,8 +17,6 @@ public class ProjectTests
         return employee;
     }
 
-    // Factory with sensible defaults: each test only spells out the field it
-    // actually exercises, which keeps the intent of the test visible at a glance.
     private static Project CreateProject(
         string name = "Test Project",
         string customerCompany = "Customer Co",
@@ -62,8 +57,6 @@ public class ProjectTests
     [Fact]
     public void Constructor_TrimsStringFields()
     {
-        // Trimming is delegated to DomainGuard.NotBlank — re-asserted here so a
-        // future refactor that bypasses the guard cannot silently regress it.
         var project = CreateProject(
             name: "  Padded Name  ",
             customerCompany: "  Padded Customer  ",
@@ -112,8 +105,6 @@ public class ProjectTests
     [Fact]
     public void Constructor_WithNameLongerThanMax_Throws()
     {
-        // Project caps the name at 200 chars (Project.cs); just over the limit
-        // is the meaningful boundary to assert.
         Assert.Throws<DomainValidationException>(
             () => CreateProject(name: new string('a', 201)));
     }
@@ -121,9 +112,6 @@ public class ProjectTests
     [Fact]
     public void Constructor_WithNullProjectManager_Throws()
     {
-        // PM uses ArgumentNullException.ThrowIfNull rather than the domain
-        // exception: a missing PM is a programmer error from the caller, not
-        // a user-input violation, and the API layer maps the two differently.
         Assert.Throws<ArgumentNullException>(() =>
             new Project("Test", "test", "test", DefaultStart, DefaultEnd, null!, 3));
     }
@@ -138,7 +126,6 @@ public class ProjectTests
     [Fact]
     public void Constructor_WithEndEqualsStart_IsAllowed()
     {
-        // Boundary case: zero-length projects are explicitly legal per DomainGuard.DateRange.
         var project = CreateProject(startDate: DefaultStart, endDate: DefaultStart);
 
         Assert.Equal(DefaultStart, project.StartDate);
@@ -154,7 +141,6 @@ public class ProjectTests
     [Fact]
     public void Constructor_WithZeroPriority_IsAllowed()
     {
-        // Boundary case: NonNegative rejects strictly-negative, so 0 must pass.
         var project = CreateProject(priority: 0);
 
         Assert.Equal(0, project.Priority);
@@ -185,9 +171,6 @@ public class ProjectTests
     [Fact]
     public void AddEmployee_WhenEmployeeIsProjectManager_Throws()
     {
-        // Enforces the "PM and participants are disjoint" invariant. If the PM
-        // could double as a participant, any per-employee aggregation would
-        // count them twice.
         var pm = CreateEmployee(id: 1);
         var project = CreateProject(projectManager: pm);
 
@@ -197,8 +180,6 @@ public class ProjectTests
     [Fact]
     public void AddEmployee_WhenAlreadyAdded_IsNoOp()
     {
-        // Idempotency by Id, not by reference: callers should be able to add
-        // the "same" employee twice without first checking membership.
         var project = CreateProject(projectManager: CreateEmployee(id: 1));
         var employee = CreateEmployee(id: 2);
 
@@ -240,8 +221,6 @@ public class ProjectTests
     [Fact]
     public void Update_WithAllArgumentsNull_LeavesProjectUnchanged()
     {
-        // Partial-update contract: every parameter is opt-in, so a no-arg call
-        // must be a no-op — not a wipe of every field to default values.
         var pm = CreateEmployee(id: 1);
         var project = CreateProject(projectManager: pm);
 
@@ -292,9 +271,6 @@ public class ProjectTests
     [Fact]
     public void Update_WithOnlyStartDate_RevalidatesAgainstCurrentEndDate()
     {
-        // Only one half of the range is supplied — the guard must compare it
-        // against the entity's *existing* end date, not against default(DateTime),
-        // otherwise a one-sided update could silently produce an inverted range.
         var project = CreateProject(startDate: DefaultStart, endDate: DefaultEnd);
 
         Assert.Throws<DomainValidationException>(
@@ -321,9 +297,6 @@ public class ProjectTests
     [Fact]
     public void Update_WhenNewProjectManagerIsCurrentParticipant_SilentlyRemovesFromParticipants()
     {
-        // Documents the "promote a participant to PM" path: when the two roles
-        // would otherwise overlap, the participants entry is dropped rather
-        // than the update being rejected. The invariant wins over the data.
         var project = CreateProject(projectManager: CreateEmployee(id: 1));
         var soonToBePm = CreateEmployee(id: 2, email: "future.pm@example.com");
         project.AddEmployee(soonToBePm);

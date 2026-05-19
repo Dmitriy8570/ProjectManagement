@@ -1,6 +1,6 @@
-﻿using BusinessLogic.Common;
+using BusinessLogic.Common;
 
-namespace Tests.BusinessLogic;
+namespace Tests.BusinessLogic.Common;
 
 public class DomainGuardTests
 {
@@ -29,7 +29,6 @@ public class DomainGuardTests
     [Fact]
     public void NotBlank_WithExactlyMaxLength_ReturnsValue()
     {
-        // Boundary case: a string of length == maxLength must still pass.
         var exactlyMax = new string('a', 100);
 
         var result = DomainGuard.NotBlank(exactlyMax, "param", maxLength: 100);
@@ -49,8 +48,6 @@ public class DomainGuardTests
     [Fact]
     public void NotBlank_ErrorMessage_ContainsFieldName()
     {
-        // Guards against accidentally reporting nameof(value) instead of the
-        // field name the caller actually passed in.
         var ex = Assert.Throws<DomainValidationException>(
             () => DomainGuard.NotBlank("", "myField", maxLength: 100));
 
@@ -93,6 +90,7 @@ public class DomainGuardTests
     [InlineData("@nodomain.com")]
     [InlineData("nouser@")]
     [InlineData("missing-at-sign.com")]
+    [InlineData("user@.com")]
     public void Email_WithInvalidFormat_Throws(string email)
     {
         Assert.Throws<DomainValidationException>(
@@ -102,9 +100,8 @@ public class DomainGuardTests
     [Fact]
     public void Email_WhenLongerThanMaxLength_Throws()
     {
-        // Format is technically valid; it must still be rejected by length.
         var longLocal = new string('a', 95);
-        var tooLong = $"{longLocal}@example.com"; // > 100 characters total
+        var tooLong = $"{longLocal}@example.com";
 
         Assert.Throws<DomainValidationException>(
             () => DomainGuard.Email(tooLong, "email", maxLength: 100));
@@ -151,7 +148,6 @@ public class DomainGuardTests
     [Fact]
     public void DateRange_WithEndEqualsStart_IsAllowed()
     {
-        // Boundary case: zero-length ranges are explicitly valid by the rule.
         var date = new DateTime(2024, 6, 1);
 
         var result = DomainGuard.DateRange(date, date, "start", "end");

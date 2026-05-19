@@ -6,5 +6,6 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/Tests.BusinessLogic/Tests.BusinessLogic.csproj" Id="bf3d3abd-982a-4d90-b4f2-3864a73d2013" />
+    <Project Path="Tests/Tests.DataAccess/Tests.DataAccess.csproj" Id="ac880d22-490e-42d1-8f0c-562aa509a7cd" />
   </Folder>
 </Solution>
