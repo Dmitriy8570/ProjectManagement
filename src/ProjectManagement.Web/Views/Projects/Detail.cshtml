@@ -1,0 +1,158 @@
+@model BusinessLogic.Projects.ProjectDto
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a asp-action="Index">Projects</a></li>
+                <li class="breadcrumb-item active">@Model.Name</li>
+            </ol>
+        </nav>
+        <h2 class="mb-0">@Model.Name</h2>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+              onsubmit="return confirm('Delete project «@Model.Name»? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i>Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Project Info -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Project Details</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Customer</dt>
+                    <dd class="col-sm-8">@Model.CustomerCompany</dd>
+
+                    <dt class="col-sm-4 text-muted">Executor</dt>
+                    <dd class="col-sm-8">@Model.ExecutingCompany</dd>
+
+                    <dt class="col-sm-4 text-muted">Start Date</dt>
+                    <dd class="col-sm-8">@Model.StartDate.ToString("dd MMMM yyyy")</dd>
+
+                    <dt class="col-sm-4 text-muted">End Date</dt>
+                    <dd class="col-sm-8">@Model.EndDate.ToString("dd MMMM yyyy")</dd>
+
+                    <dt class="col-sm-4 text-muted">Priority</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-secondary fs-6">@Model.Priority</span>
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Project Manager</dt>
+                    <dd class="col-sm-8">
+                        <a asp-controller="Employees" asp-action="Detail"
+                           asp-route-id="@Model.ProjectManager.Id" class="text-decoration-none">
+                            <i class="bi bi-person-badge me-1"></i>@Model.ProjectManager.FullName
+                        </a>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-people me-2"></i>Team Members</span>
+                <span class="badge bg-secondary">@Model.Employees.Count</span>
+            </div>
+            <div class="card-body">
+                @if (Model.Employees.Any())
+                {
+                    <ul class="list-group list-group-flush mb-3">
+                        @foreach (var emp in Model.Employees)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <a asp-controller="Employees" asp-action="Detail"
+                                   asp-route-id="@emp.Id" class="text-decoration-none">
+                                    <i class="bi bi-person me-2 text-muted"></i>@emp.FullName
+                                </a>
+                                <form asp-action="Unassign" asp-route-id="@Model.Id" method="post">
+                                    <input type="hidden" name="employeeId" value="@emp.Id" />
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0"
+                                            title="Remove from project"
+                                            onclick="return confirm('Remove @emp.FullName from this project?')">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted small mb-3">No team members yet.</p>
+                }
+
+                <!-- Add employee -->
+                <form asp-action="Assign" asp-route-id="@Model.Id" method="post" class="mt-2">
+                    <label class="form-label small text-muted">Add Employee</label>
+                    <div class="autocomplete-wrapper">
+                        <input type="text" id="assign-search" class="form-control form-control-sm"
+                               placeholder="Search by name…" autocomplete="off" />
+                        <div id="assign-dropdown" class="autocomplete-dropdown"></div>
+                    </div>
+                    <input type="hidden" name="employeeId" id="assign-employee-id" value="0" />
+                    <div id="assign-selected" class="mt-2" style="display:none;">
+                        <span class="badge bg-info text-dark" id="assign-selected-name"></span>
+                        <button type="button" class="btn btn-link btn-sm text-muted p-0 ms-1"
+                                id="assign-clear">remove</button>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary mt-2" id="assign-btn" disabled>
+                        <i class="bi bi-person-plus me-1"></i>Assign
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documents (stub for future file upload) -->
+<div class="card mt-4">
+    <div class="card-header">
+        <i class="bi bi-file-earmark-text me-2"></i>Documents
+        <span class="badge bg-secondary ms-2">Coming soon</span>
+    </div>
+    <div class="card-body">
+        <div class="drop-zone" id="doc-drop-zone">
+            <i class="bi bi-cloud-upload"></i>
+            <p class="mb-1">Drag &amp; drop files here or
+                <label for="doc-file-input" class="drop-zone-link">browse</label>
+            </p>
+            <p class="small text-muted mb-0">File upload will be available in a future release.</p>
+            <input type="file" id="doc-file-input" multiple style="display:none;" disabled />
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/employee-autocomplete.js" asp-append-version="true"></script>
+    <script>
+        initAssignAutocomplete({
+            searchInput: document.getElementById('assign-search'),
+            dropdown: document.getElementById('assign-dropdown'),
+            hiddenInput: document.getElementById('assign-employee-id'),
+            selectedDisplay: document.getElementById('assign-selected'),
+            selectedName: document.getElementById('assign-selected-name'),
+            clearBtn: document.getElementById('assign-clear'),
+            submitBtn: document.getElementById('assign-btn'),
+            searchUrl: '/employees/search'
+        });
+
+        // Stub drop-zone visual feedback only
+        initDropZoneStub(document.getElementById('doc-drop-zone'));
+    </script>
+}

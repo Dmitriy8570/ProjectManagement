@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Presentation\Presentation.csproj" />
+    <ProjectReference Include="..\..\src\ProjectManagement.Api\ProjectManagement.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,232 @@
+/* ── Wizard: step progress indicators ───────────────────────────────────── */
+.wizard-steps {
+    display: flex;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0;
+    margin-bottom: 1.5rem;
+}
+
+.wizard-step {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.75rem 0.5rem;
+    color: #adb5bd;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+    user-select: none;
+}
+
+.wizard-step.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+}
+
+.wizard-step.completed {
+    color: #198754;
+    border-bottom-color: #198754;
+}
+
+.step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+}
+
+.wizard-step.active .step-number {
+    background: #0d6efd;
+    color: #fff;
+}
+
+.wizard-step.completed .step-number {
+    background: #198754;
+    color: #fff;
+}
+
+/* ── Wizard panels ─────────────────────────────────────────────────────── */
+.wizard-panel {
+    display: none;
+    animation: fadeIn 0.2s ease;
+}
+
+.wizard-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Inline step validation error ─────────────────────────────────────── */
+#step-error {
+    display: none;
+    margin-top: 0.5rem;
+}
+
+/* ── Autocomplete ─────────────────────────────────────────────────────── */
+.autocomplete-wrapper {
+    position: relative;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 0.375rem 0.375rem;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+    display: none;
+}
+
+.autocomplete-item {
+    padding: 0.5rem 0.875rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.1s;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.focused {
+    background: #f0f4ff;
+}
+
+.autocomplete-item.no-results {
+    color: #adb5bd;
+    cursor: default;
+    font-style: italic;
+}
+
+/* ── Employee chips (multi-select) ────────────────────────────────────── */
+#emp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.employee-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #e7f0ff;
+    border: 1px solid #b6cff5;
+    border-radius: 1rem;
+    padding: 0.2rem 0.6rem 0.2rem 0.8rem;
+    font-size: 0.8125rem;
+    color: #1a3d7c;
+}
+
+.employee-chip .remove-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    color: #6c9ccf;
+    cursor: pointer;
+    line-height: 1;
+    border-radius: 50%;
+    width: 1.1rem;
+    height: 1.1rem;
+    transition: background 0.1s, color 0.1s;
+}
+
+.employee-chip .remove-btn:hover {
+    background: #ccd8f0;
+    color: #dc3545;
+}
+
+/* ── File drop-zone ───────────────────────────────────────────────────── */
+.drop-zone {
+    border: 2px dashed #ced4da;
+    border-radius: 0.5rem;
+    padding: 3.5rem 2rem;
+    text-align: center;
+    color: #6c757d;
+    cursor: default;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.drop-zone.drag-over {
+    border-color: #0d6efd;
+    background: #f0f4ff;
+    color: #0d6efd;
+}
+
+.drop-zone > i {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+    display: block;
+    opacity: 0.6;
+}
+
+.drop-zone-link {
+    color: #0d6efd;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.file-item .file-icon {
+    font-size: 1.25rem;
+    color: #6c757d;
+    flex-shrink: 0;
+}
+
+.file-item .file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-item .file-size {
+    color: #adb5bd;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.file-item .remove-file {
+    background: none;
+    border: none;
+    color: #adb5bd;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.file-item .remove-file:hover {
+    color: #dc3545;
+}

@@ -4,7 +4,7 @@ using BusinessLogic.Employees.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Presentation.Controllers;
+namespace ProjectManagement.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -66,3 +66,4 @@ public class EmployeesController : ControllerBase
         return Ok(result);
     }
 }
+

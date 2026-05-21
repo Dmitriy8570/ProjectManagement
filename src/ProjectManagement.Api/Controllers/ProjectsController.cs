@@ -5,7 +5,7 @@ using BusinessLogic.Projects.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Presentation.Controllers;
+namespace ProjectManagement.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

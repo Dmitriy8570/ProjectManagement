@@ -1,6 +1,6 @@
-using BusinessLogic.Common;
+﻿using BusinessLogic.Common;
 using Microsoft.AspNetCore.Http;
-using Presentation.Infrastructure;
+using ProjectManagement.Api.Infrastructure;
 
 namespace Tests.Presentation.Infrastructure;
 
@@ -71,3 +71,4 @@ public class DomainExceptionHandlerTests
         Assert.Equal(statusBefore, ctx.Response.StatusCode);
     }
 }
+

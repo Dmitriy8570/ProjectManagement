@@ -1,0 +1,207 @@
+@model ProjectListViewModel
+@{
+    ViewData["Title"] = "Projects";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0"><i class="bi bi-folder2-open me-2"></i>Projects</h2>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>New Project
+    </a>
+</div>
+
+<!-- Filter form -->
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between"
+         style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#filterBody">
+        <span><i class="bi bi-funnel me-2"></i>Filter &amp; Sort</span>
+        <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="collapse show" id="filterBody">
+        <div class="card-body">
+            <form method="get" asp-action="Index">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Start Date From</label>
+                        <input type="date" name="StartDateFrom" class="form-control form-control-sm"
+                               value="@(Model.StartDateFrom?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Start Date To</label>
+                        <input type="date" name="StartDateTo" class="form-control form-control-sm"
+                               value="@(Model.StartDateTo?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Min Priority</label>
+                        <input type="number" name="MinPriority" class="form-control form-control-sm"
+                               min="0" value="@Model.MinPriority" placeholder="0" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Max Priority</label>
+                        <input type="number" name="MaxPriority" class="form-control form-control-sm"
+                               min="0" value="@Model.MaxPriority" placeholder="∞" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Sort By</label>
+                        <select name="SortBy" class="form-select form-select-sm">
+                            @foreach (ProjectSortBy val in Enum.GetValues<ProjectSortBy>())
+                            {
+                                <option value="@val" selected="@(Model.SortBy == val)">@val</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="Descending" id="descCheck"
+                                   value="true" @(Model.Descending ? "checked" : "") />
+                            <label class="form-check-label" for="descCheck">Descending</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Per Page</label>
+                        <select name="PageSize" class="form-select form-select-sm">
+                            @foreach (var size in new[] { 10, 25, 50 })
+                            {
+                                <option value="@size" selected="@(Model.PageSize == size)">@size</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-search me-1"></i>Apply
+                        </button>
+                        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i>Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Results -->
+@if (!Model.Items.Any())
+{
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-inbox" style="font-size:3rem;"></i>
+        <p class="mt-2">No projects found. <a asp-action="Create">Create one?</a></p>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-muted small">
+            Showing @((Model.Page - 1) * Model.PageSize + 1)–@Math.Min(Model.Page * Model.PageSize, Model.TotalCount)
+            of @Model.TotalCount
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Customer</th>
+                    <th>Executor</th>
+                    <th>Manager</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th class="text-center">Priority</th>
+                    <th class="text-center">Team</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <a asp-action="Detail" asp-route-id="@p.Id" class="fw-semibold text-decoration-none">
+                                @p.Name
+                            </a>
+                        </td>
+                        <td class="text-muted small">@p.CustomerCompany</td>
+                        <td class="text-muted small">@p.ExecutingCompany</td>
+                        <td class="small">@p.ProjectManager.FullName</td>
+                        <td class="small">@p.StartDate.ToString("dd MMM yyyy")</td>
+                        <td class="small">@p.EndDate.ToString("dd MMM yyyy")</td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">@p.Priority</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border">
+                                <i class="bi bi-people me-1"></i>@p.Employees.Count
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Detail" asp-route-id="@p.Id"
+                               class="btn btn-sm btn-outline-primary me-1" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@p.Id"
+                               class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete project «@p.Name»? This cannot be undone.')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav>
+            <ul class="pagination pagination-sm justify-content-center">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-page="@(Model.Page - 1)"
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-startDateFrom="@Model.StartDateFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-startDateTo="@Model.StartDateTo?.ToString("yyyy-MM-dd")"
+                       asp-route-minPriority="@Model.MinPriority"
+                       asp-route-maxPriority="@Model.MaxPriority"
+                       asp-route-sortBy="@Model.SortBy"
+                       asp-route-descending="@Model.Descending">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-page="@i"
+                           asp-route-pageSize="@Model.PageSize"
+                           asp-route-startDateFrom="@Model.StartDateFrom?.ToString("yyyy-MM-dd")"
+                           asp-route-startDateTo="@Model.StartDateTo?.ToString("yyyy-MM-dd")"
+                           asp-route-minPriority="@Model.MinPriority"
+                           asp-route-maxPriority="@Model.MaxPriority"
+                           asp-route-sortBy="@Model.SortBy"
+                           asp-route-descending="@Model.Descending">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-page="@(Model.Page + 1)"
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-startDateFrom="@Model.StartDateFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-startDateTo="@Model.StartDateTo?.ToString("yyyy-MM-dd")"
+                       asp-route-minPriority="@Model.MinPriority"
+                       asp-route-maxPriority="@Model.MaxPriority"
+                       asp-route-sortBy="@Model.SortBy"
+                       asp-route-descending="@Model.Descending">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

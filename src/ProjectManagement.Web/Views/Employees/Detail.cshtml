@@ -1,0 +1,49 @@
+@model EmployeeDto
+@{
+    ViewData["Title"] = Model.FullName;
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Employees</a></li>
+        <li class="breadcrumb-item active">@Model.FullName</li>
+    </ol>
+</nav>
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">
+        <i class="bi bi-person-circle me-2"></i>@Model.FullName
+    </h2>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+              onsubmit="return confirm('Delete @Model.FullName? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i>Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card" style="max-width: 480px;">
+    <div class="card-header"><i class="bi bi-info-circle me-2"></i>Personal Information</div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4 text-muted">Last Name</dt>
+            <dd class="col-sm-8">@Model.LastName</dd>
+
+            <dt class="col-sm-4 text-muted">First Name</dt>
+            <dd class="col-sm-8">@Model.FirstName</dd>
+
+            <dt class="col-sm-4 text-muted">Patronymic</dt>
+            <dd class="col-sm-8">@Model.Patronymic</dd>
+
+            <dt class="col-sm-4 text-muted">Email</dt>
+            <dd class="col-sm-8">
+                <a href="mailto:@Model.Email">@Model.Email</a>
+            </dd>
+        </dl>
+    </div>
+</div>

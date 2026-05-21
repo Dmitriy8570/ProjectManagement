@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Presentation.Infrastructure;
+namespace ProjectManagement.Api.Infrastructure;
 
 public sealed class DomainExceptionHandler : IExceptionHandler
 {
