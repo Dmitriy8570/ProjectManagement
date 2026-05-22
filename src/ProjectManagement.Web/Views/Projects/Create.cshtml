@@ -38,27 +38,27 @@
                 <div class="wizard-steps mb-4">
                     <div class="wizard-step active" data-step="1">
                         <span class="step-number">1</span>
-                        <span class="d-none d-sm-inline">Basic Info</span>
+                        <span class="d-none d-xl-inline">Basic Info</span>
                     </div>
                     <div class="wizard-step" data-step="2">
                         <span class="step-number">2</span>
-                        <span class="d-none d-sm-inline">Companies</span>
+                        <span class="d-none d-xl-inline">Companies</span>
                     </div>
                     <div class="wizard-step" data-step="3">
                         <span class="step-number">3</span>
-                        <span class="d-none d-sm-inline">Manager</span>
+                        <span class="d-none d-xl-inline">Manager</span>
                     </div>
                     <div class="wizard-step" data-step="4">
                         <span class="step-number">4</span>
-                        <span class="d-none d-sm-inline">Team</span>
+                        <span class="d-none d-xl-inline">Team</span>
                     </div>
                     <div class="wizard-step" data-step="5">
                         <span class="step-number">5</span>
-                        <span class="d-none d-sm-inline">Documents</span>
+                        <span class="d-none d-xl-inline">Documents</span>
                     </div>
                 </div>
 
-                <form id="wizard-form" asp-action="Create" method="post">
+                <form id="wizard-form" asp-action="Create" method="post" enctype="multipart/form-data">
 
                     <!-- ── Step 1: Basic Info ───────────────────────────────── -->
                     <div class="wizard-panel active" data-panel="1">
@@ -118,20 +118,12 @@
                             <label class="form-label">Search Employee</label>
                             <div class="autocomplete-wrapper">
                                 <input type="text" id="pm-search" class="form-control"
-                                       placeholder="Start typing a name…" autocomplete="off"
-                                       value="@Model.ProjectManagerName" />
+                                       placeholder="Start typing a name…" autocomplete="off" />
                                 <div id="pm-dropdown" class="autocomplete-dropdown"></div>
                             </div>
+                            <div id="pm-chip-container"></div>
                             <input asp-for="ProjectManagerId" type="hidden" id="pm-id" />
                             <span asp-validation-for="ProjectManagerId" class="text-danger small"></span>
-                        </div>
-                        <div id="pm-selected" class="mt-2" @(Model.ProjectManagerId > 0 ? "" : "style=\"display:none;\"")>
-                            <div class="alert alert-info d-flex justify-content-between align-items-center py-2">
-                                <span><i class="bi bi-person-badge me-2"></i><strong id="pm-name">@Model.ProjectManagerName</strong></span>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="pm-clear">
-                                    Change
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -175,11 +167,11 @@
                         </p>
                     </div>
 
-                    <!-- ── Step 5: Documents (stub) ────────────────────────── -->
+                    <!-- ── Step 5: Documents ──────────────────────────────── -->
                     <div class="wizard-panel" data-panel="5">
                         <h5 class="mb-3 text-muted">Step 5 — Project Documents</h5>
                         <p class="text-muted small">
-                            Upload supporting documents for the project.
+                            Optionally attach files. You can also add documents after the project is created.
                         </p>
 
                         <div class="drop-zone" id="drop-zone">
@@ -188,19 +180,11 @@
                                 Drag &amp; drop files here, or
                                 <label for="file-input" class="drop-zone-link">browse</label>
                             </p>
-                            <p class="small text-muted mb-0">
-                                File upload will be available in a future release.
-                            </p>
-                            <input type="file" id="file-input" multiple
-                                   style="display:none;" disabled />
+                            <p class="small text-muted mb-0">Max 50 MB per file</p>
+                            <input type="file" name="files" id="file-input" multiple style="display:none;" />
                         </div>
 
                         <div id="file-list" class="mt-3"></div>
-
-                        <div class="alert alert-secondary mt-3 py-2 small">
-                            <i class="bi bi-info-circle me-1"></i>
-                            You can submit the project now and upload documents later.
-                        </div>
                     </div>
 
                     <!-- ── Navigation ─────────────────────────────────────── -->
@@ -267,17 +251,15 @@
             }
         });
 
-        // Project Manager autocomplete (single selection)
+        // Project Manager autocomplete (single selection, chip-based)
         initSingleAutocomplete({
-            searchInput: document.getElementById('pm-search'),
-            dropdown: document.getElementById('pm-dropdown'),
-            hiddenInput: document.getElementById('pm-id'),
-            selectedDisplay: document.getElementById('pm-selected'),
-            selectedName: document.getElementById('pm-name'),
-            clearBtn: document.getElementById('pm-clear'),
-            searchUrl: '/employees/search',
-            initialId: @Model.ProjectManagerId,
-            initialName: '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjectManagerName ?? "").Trim('"'))'
+            searchInput:   document.getElementById('pm-search'),
+            dropdown:      document.getElementById('pm-dropdown'),
+            hiddenInput:   document.getElementById('pm-id'),
+            chipContainer: document.getElementById('pm-chip-container'),
+            searchUrl:     '/employees/search',
+            initialId:     @Model.ProjectManagerId,
+            initialName:   '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjectManagerName ?? "").Trim('"'))'
         });
 
         // Team Members autocomplete (multi-selection)
@@ -292,7 +274,62 @@
             excludeInputId: 'pm-id'
         });
 
-        // File drop-zone (stub: visual feedback only, no upload)
-        initDropZoneStub(document.getElementById('drop-zone'));
+        // Drop zone for step 5 — real multi-file selection
+        (function () {
+            const zone     = document.getElementById('drop-zone');
+            const input    = document.getElementById('file-input');
+            const fileList = document.getElementById('file-list');
+            let dt = new DataTransfer();
+
+            function esc(s) {
+                return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+
+            function renderFiles() {
+                fileList.innerHTML = '';
+                Array.from(dt.files).forEach(function (f, idx) {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.innerHTML =
+                        '<i class="bi bi-file-earmark file-icon"></i>' +
+                        '<span class="file-name">' + esc(f.name) + '</span>' +
+                        '<span class="file-size">' + (f.size / 1024).toFixed(1) + ' KB</span>' +
+                        '<button type="button" class="remove-file" data-idx="' + idx + '">' +
+                            '<i class="bi bi-x-lg"></i></button>';
+                    fileList.appendChild(div);
+                });
+                input.files = dt.files;
+            }
+
+            function addFiles(newFiles) {
+                for (var i = 0; i < newFiles.length; i++) dt.items.add(newFiles[i]);
+                renderFiles();
+            }
+
+            zone.addEventListener('dragover',  function (e) { e.preventDefault(); zone.classList.add('drag-over'); });
+            zone.addEventListener('dragleave', function ()  { zone.classList.remove('drag-over'); });
+            zone.addEventListener('drop',      function (e) {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                addFiles(e.dataTransfer.files);
+            });
+
+            input.addEventListener('change', function () {
+                var captured = Array.from(input.files); // capture before value reset clears FileList
+                input.value = '';                        // reset so same file can be re-selected
+                addFiles(captured);                      // renderFiles() sets input.files = dt.files last
+            });
+
+            fileList.addEventListener('click', function (e) {
+                const btn = e.target.closest('.remove-file');
+                if (!btn) return;
+                const idx = parseInt(btn.dataset.idx, 10);
+                const newDt = new DataTransfer();
+                Array.from(dt.files).forEach(function (f, i) { if (i !== idx) newDt.items.add(f); });
+                dt = newDt;
+                renderFiles();
+            });
+        })();
     </script>
 }

@@ -12,8 +12,8 @@ public record CreateEmployeeRequest
     [Required, MaxLength(100)]
     public string LastName { get; init; } = default!;
 
-    [Required, MaxLength(100)]
-    public string Patronymic { get; init; } = default!;
+    [MaxLength(100)]
+    public string? Patronymic { get; init; }
 
     [Required, EmailAddress, MaxLength(100)]
     public string Email { get; init; } = default!;

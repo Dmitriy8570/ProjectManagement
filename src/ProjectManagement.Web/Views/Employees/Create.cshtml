@@ -40,7 +40,9 @@
                         <span asp-validation-for="FirstName" class="text-danger small"></span>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Patronymic" class="form-label"></label>
+                        <label asp-for="Patronymic" class="form-label">
+                            Patronymic <span class="text-muted fw-normal">(optional)</span>
+                        </label>
                         <input asp-for="Patronymic" class="form-control" />
                         <span asp-validation-for="Patronymic" class="text-danger small"></span>
                     </div>

@@ -4,29 +4,26 @@
     var term = ViewBag.Term as string;
 }
 
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <h2 class="mb-0"><i class="bi bi-people me-2"></i>Employees</h2>
+<div class="pm-page-header">
+    <h2><i class="bi bi-people"></i>Employees</h2>
     <a asp-action="Create" class="btn btn-primary">
         <i class="bi bi-person-plus me-1"></i>Add Employee
     </a>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body py-2">
-        <form method="get" asp-action="Index" class="d-flex gap-2">
-            <input type="search" name="term" class="form-control form-control-sm"
-                   placeholder="Search by name or email…" value="@term" style="max-width:300px;" />
-            <button type="submit" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-search"></i>
-            </button>
-            @if (!string.IsNullOrEmpty(term))
-            {
-                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i>
-                </a>
-            }
-        </form>
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <div class="autocomplete-wrapper flex-grow-1" style="max-width:380px;">
+        <input type="text" id="emp-page-search" class="form-control"
+               placeholder="Search by name or email…" autocomplete="off"
+               value="@term" />
+        <div id="emp-page-dropdown" class="autocomplete-dropdown"></div>
     </div>
+    @if (!string.IsNullOrEmpty(term))
+    {
+        <a asp-action="Index" class="btn btn-outline-secondary" title="Clear search">
+            <i class="bi bi-x-circle me-1"></i>Clear
+        </a>
+    }
 </div>
 
 @if (!Model.Any())
@@ -48,7 +45,7 @@
 }
 else
 {
-    <p class="text-muted small mb-2">@Model.Count employee(s)</p>
+    <p class="text-muted small mb-2">Showing @Model.Count employee(s)</p>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
         @foreach (var emp in Model)
         {
@@ -66,10 +63,6 @@ else
                         </p>
                     </div>
                     <div class="card-footer d-flex gap-1 bg-transparent border-top-0 pb-2 pt-0">
-                        <a asp-action="Detail" asp-route-id="@emp.Id"
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i>
-                        </a>
                         <a asp-action="Edit" asp-route-id="@emp.Id"
                            class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-pencil"></i>
@@ -85,4 +78,15 @@ else
             </div>
         }
     </div>
+}
+
+@section Scripts {
+    <script src="~/js/employee-autocomplete.js" asp-append-version="true"></script>
+    <script>
+        initEmployeePageSearch({
+            searchInput: document.getElementById('emp-page-search'),
+            dropdown:    document.getElementById('emp-page-dropdown'),
+            searchUrl:   '/employees/search'
+        });
+    </script>
 }

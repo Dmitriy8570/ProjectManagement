@@ -32,6 +32,13 @@ public class ProjectRepository : IProjectRepository
             query = query.Where(p => p.Priority <= filter.MaxPriority.Value);
         if (filter.ProjectManagerId.HasValue)
             query = query.Where(p => p.ProjectManagerId == filter.ProjectManagerId.Value);
+        if (filter.ParticipantEmployeeId.HasValue)
+            query = query.Where(p => p.Employees.Any(e => e.Id == filter.ParticipantEmployeeId.Value));
+        if (!string.IsNullOrWhiteSpace(filter.NameSearch))
+        {
+            var term = filter.NameSearch.Trim().ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(term));
+        }
 
         // Count over the filtered query, not the whole table — otherwise the
         // pager renders totals that don't match the visible rows.

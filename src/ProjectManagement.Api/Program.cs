@@ -1,4 +1,6 @@
-﻿using ProjectManagement.Api.Infrastructure;
+﻿using DataAccess;
+using Microsoft.EntityFrameworkCore;
+using ProjectManagement.Api.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,18 +10,26 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.WithOrigins("http://localhost:5173", "http://localhost:5174")
+     .AllowAnyHeader()
+     .AllowAnyMethod()));
+
 builder.AddBusinessServices();
 builder.AddDataAccessServices();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+using (var scope = app.Services.CreateScope())
+    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseCors();
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.MapControllers();

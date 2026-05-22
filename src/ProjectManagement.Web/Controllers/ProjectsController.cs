@@ -1,4 +1,6 @@
 using BusinessLogic.Common;
+using BusinessLogic.Documents.Commands;
+using BusinessLogic.Documents.Queries;
 using BusinessLogic.Projects;
 using BusinessLogic.Projects.Commands;
 using BusinessLogic.Projects.Queries;
@@ -24,14 +26,15 @@ public class ProjectsController : Controller
 
         var filter = new ProjectListFilter
         {
+            NameSearch    = vm.NameSearch,
             StartDateFrom = vm.StartDateFrom,
-            StartDateTo = vm.StartDateTo,
-            MinPriority = vm.MinPriority,
-            MaxPriority = vm.MaxPriority,
-            SortBy = vm.SortBy,
-            Descending = vm.Descending,
-            Page = vm.Page,
-            PageSize = vm.PageSize
+            StartDateTo   = vm.StartDateTo,
+            MinPriority   = vm.MinPriority,
+            MaxPriority   = vm.MaxPriority,
+            SortBy        = vm.SortBy,
+            Descending    = vm.Descending,
+            Page          = vm.Page,
+            PageSize      = vm.PageSize
         };
 
         var result = await _mediator.Send(new GetProjectsQuery { Filter = filter }, ct);
@@ -45,13 +48,96 @@ public class ProjectsController : Controller
     {
         try
         {
-            var project = await _mediator.Send(new GetProjectByIdQuery { Id = id }, ct);
-            return View(project);
+            var projectTask  = _mediator.Send(new GetProjectByIdQuery { Id = id }, ct);
+            var documentsTask = _mediator.Send(new GetProjectDocumentsQuery { ProjectId = id }, ct);
+            await Task.WhenAll(projectTask, documentsTask);
+            ViewBag.Documents = documentsTask.Result;
+            return View(projectTask.Result);
         }
         catch (EntityNotFoundException)
         {
             return NotFound();
         }
+    }
+
+    [HttpPost("{id:int}/documents/upload")]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(52_428_800)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 52_428_800)]
+    public async Task<IActionResult> UploadDocument(
+        int id, List<IFormFile>? files, CancellationToken ct)
+    {
+        var validFiles = files?.Where(f => f.Length > 0).ToList();
+        if (validFiles is not { Count: > 0 })
+        {
+            TempData["Error"] = "Please select at least one file to upload.";
+            return RedirectToAction(nameof(Detail), new { id });
+        }
+
+        var errors = new List<string>();
+        var uploaded = 0;
+
+        foreach (var file in validFiles)
+        {
+            try
+            {
+                await _mediator.Send(new UploadDocumentCommand
+                {
+                    ProjectId   = id,
+                    FileName    = file.FileName,
+                    ContentType = file.ContentType,
+                    SizeBytes   = file.Length,
+                    Content     = file.OpenReadStream()
+                }, ct);
+                uploaded++;
+            }
+            catch (DomainValidationException ex)
+            {
+                errors.Add($"\"{file.FileName}\": {ex.Message}");
+            }
+        }
+
+        if (uploaded > 0)
+            TempData["Success"] = uploaded == 1
+                ? $"File \"{validFiles[0].FileName}\" uploaded."
+                : $"{uploaded} files uploaded.";
+
+        if (errors.Count > 0)
+            TempData["Error"] = string.Join(" | ", errors);
+
+        return RedirectToAction(nameof(Detail), new { id });
+    }
+
+    [HttpGet("{id:int}/documents/{docId:int}/download")]
+    public async Task<IActionResult> DownloadDocument(int id, int docId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _mediator.Send(
+                new GetDocumentDownloadQuery { DocumentId = docId }, ct);
+            return File(result.Content, result.ContentType, result.FileName);
+        }
+        catch (EntityNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpPost("{id:int}/documents/{docId:int}/delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteDocument(int id, int docId, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new DeleteDocumentCommand { DocumentId = docId }, ct);
+            TempData["Success"] = "Document deleted.";
+        }
+        catch (EntityNotFoundException)
+        {
+            TempData["Error"] = "Document not found.";
+        }
+
+        return RedirectToAction(nameof(Detail), new { id });
     }
 
     [HttpGet("create")]
@@ -66,7 +152,10 @@ public class ProjectsController : Controller
 
     [HttpPost("create")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateProjectViewModel model, CancellationToken ct)
+    [RequestSizeLimit(52_428_800)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 52_428_800)]
+    public async Task<IActionResult> Create(
+        CreateProjectViewModel model, List<IFormFile>? files, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return View(model);
@@ -88,6 +177,29 @@ public class ProjectsController : Controller
                 }
             };
             var result = await _mediator.Send(command, ct);
+
+            if (files is { Count: > 0 })
+            {
+                foreach (var file in files.Where(f => f.Length > 0))
+                {
+                    try
+                    {
+                        await _mediator.Send(new UploadDocumentCommand
+                        {
+                            ProjectId   = result.Id,
+                            FileName    = file.FileName,
+                            ContentType = file.ContentType,
+                            SizeBytes   = file.Length,
+                            Content     = file.OpenReadStream()
+                        }, ct);
+                    }
+                    catch (DomainValidationException)
+                    {
+                        // Oversized files are skipped; the project is still created.
+                    }
+                }
+            }
+
             TempData["Success"] = $"Project \"{model.Name}\" was created successfully.";
             return RedirectToAction(nameof(Detail), new { id = result.Id });
         }
@@ -181,6 +293,20 @@ public class ProjectsController : Controller
             TempData["Error"] = "Project not found.";
         }
         return RedirectToAction(nameof(Index));
+    }
+
+    // AJAX endpoint for project name autocomplete on the index page.
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] string? term, CancellationToken ct)
+    {
+        var filter = new ProjectListFilter
+        {
+            NameSearch = term,
+            PageSize   = 10,
+            SortBy     = ProjectSortBy.Name
+        };
+        var result = await _mediator.Send(new GetProjectsQuery { Filter = filter }, ct);
+        return Json(result.Items.Select(p => new { p.Id, p.Name }));
     }
 
     [HttpPost("{id:int}/assign")]

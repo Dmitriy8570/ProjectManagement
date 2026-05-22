@@ -22,6 +22,8 @@ public record ProjectListFilter
     public int? MinPriority { get; init; }
     public int? MaxPriority { get; init; }
     public int? ProjectManagerId { get; init; }
+    public int? ParticipantEmployeeId { get; init; }
+    public string? NameSearch { get; init; }
 
     public ProjectSortBy SortBy { get; init; } = ProjectSortBy.StartDate;
     public bool Descending { get; init; }

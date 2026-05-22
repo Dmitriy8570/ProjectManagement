@@ -1,6 +1,7 @@
 ﻿using BusinessLogic.Employees;
 using BusinessLogic.Employees.Commands;
 using BusinessLogic.Employees.Queries;
+using BusinessLogic.Projects.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -53,6 +54,15 @@ public class EmployeesController : ControllerBase
     {
         var command = new EditEmployeeCommand { Data = request, Id = id };
         var result = await _mediator.Send(command, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}/projects")]
+    [ProducesResponseType(typeof(EmployeeProjectsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EmployeeProjectsDto>> GetEmployeeProjects(int id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetEmployeeProjectsQuery { EmployeeId = id }, ct);
         return Ok(result);
     }
 

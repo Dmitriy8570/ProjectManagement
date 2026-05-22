@@ -3,84 +3,134 @@
     ViewData["Title"] = "Projects";
 }
 
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <h2 class="mb-0"><i class="bi bi-folder2-open me-2"></i>Projects</h2>
+<!-- ── Page header ──────────────────────────────────────────────────── -->
+<div class="pm-page-header">
+    <h2><i class="bi bi-folder2-open"></i>Projects</h2>
     <a asp-action="Create" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i>New Project
     </a>
 </div>
 
-<!-- Filter form -->
-<div class="card mb-4">
-    <div class="card-header d-flex align-items-center justify-content-between"
-         style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#filterBody">
-        <span><i class="bi bi-funnel me-2"></i>Filter &amp; Sort</span>
-        <i class="bi bi-chevron-down"></i>
+<!-- ── Search + filters toolbar ─────────────────────────────────────── -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+
+    <!-- Project name search with dropdown -->
+    <div class="autocomplete-wrapper flex-grow-1" style="max-width:380px;">
+        <input type="text" id="proj-search" class="form-control"
+               placeholder="Search by project name…" autocomplete="off"
+               value="@Model.NameSearch" />
+        <div id="proj-dropdown" class="autocomplete-dropdown"></div>
     </div>
-    <div class="collapse show" id="filterBody">
-        <div class="card-body">
-            <form method="get" asp-action="Index">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted">Start Date From</label>
-                        <input type="date" name="StartDateFrom" class="form-control form-control-sm"
-                               value="@(Model.StartDateFrom?.ToString("yyyy-MM-dd"))" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted">Start Date To</label>
-                        <input type="date" name="StartDateTo" class="form-control form-control-sm"
-                               value="@(Model.StartDateTo?.ToString("yyyy-MM-dd"))" />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted">Min Priority</label>
-                        <input type="number" name="MinPriority" class="form-control form-control-sm"
-                               min="0" value="@Model.MinPriority" placeholder="0" />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted">Max Priority</label>
-                        <input type="number" name="MaxPriority" class="form-control form-control-sm"
-                               min="0" value="@Model.MaxPriority" placeholder="∞" />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted">Sort By</label>
-                        <select name="SortBy" class="form-select form-select-sm">
-                            @foreach (ProjectSortBy val in Enum.GetValues<ProjectSortBy>())
-                            {
-                                <option value="@val" selected="@(Model.SortBy == val)">@val</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="Descending" id="descCheck"
-                                   value="true" @(Model.Descending ? "checked" : "") />
-                            <label class="form-check-label" for="descCheck">Descending</label>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted">Per Page</label>
-                        <select name="PageSize" class="form-select form-select-sm">
-                            @foreach (var size in new[] { 10, 25, 50 })
-                            {
-                                <option value="@size" selected="@(Model.PageSize == size)">@size</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="col-12 d-flex gap-2">
-                        <button type="submit" class="btn btn-sm btn-primary">
-                            <i class="bi bi-search me-1"></i>Apply
-                        </button>
-                        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-x-circle me-1"></i>Reset
-                        </a>
-                    </div>
+    <button type="button" class="btn btn-primary" id="proj-search-btn">
+        <i class="bi bi-search me-1"></i>Search
+    </button>
+
+    <!-- Filter drawer button -->
+    <button type="button" class="btn btn-outline-secondary"
+            data-bs-toggle="offcanvas" data-bs-target="#filterDrawer" aria-controls="filterDrawer">
+        <i class="bi bi-sliders2 me-1"></i>Filters
+        @if (Model.HasActiveFilters)
+        {
+            <span class="badge bg-primary ms-1">•</span>
+        }
+    </button>
+
+</div>
+
+<!-- ── Filter offcanvas ──────────────────────────────────────────────── -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="filterDrawer" aria-labelledby="filterDrawerLabel">
+    <div class="offcanvas-header border-bottom">
+        <h6 class="offcanvas-title fw-semibold" id="filterDrawerLabel">
+            <i class="bi bi-sliders2 me-2"></i>Filters &amp; Sort
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="get" asp-action="Index" id="filter-form">
+
+            <!-- Name search (also in filter form for URL state) -->
+            <div class="mb-3">
+                <label class="form-label small fw-semibold text-uppercase text-muted" style="letter-spacing:.06em;">Project Name</label>
+                <input type="text" name="NameSearch" class="form-control"
+                       placeholder="Filter by name…"
+                       value="@Model.NameSearch" />
+            </div>
+
+            <hr class="my-3" />
+            <div class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:.06em;">Date Range</div>
+
+            <div class="mb-3">
+                <label class="form-label small text-muted">Start Date — From</label>
+                <input type="date" name="StartDateFrom" class="form-control form-control-sm"
+                       value="@(Model.StartDateFrom?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label small text-muted">Start Date — To</label>
+                <input type="date" name="StartDateTo" class="form-control form-control-sm"
+                       value="@(Model.StartDateTo?.ToString("yyyy-MM-dd"))" />
+            </div>
+
+            <hr class="my-3" />
+            <div class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:.06em;">Priority</div>
+
+            <div class="row g-2 mb-3">
+                <div class="col">
+                    <label class="form-label small text-muted">Min</label>
+                    <input type="number" name="MinPriority" class="form-control form-control-sm"
+                           min="0" value="@Model.MinPriority" placeholder="0" />
                 </div>
-            </form>
-        </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Max</label>
+                    <input type="number" name="MaxPriority" class="form-control form-control-sm"
+                           min="0" value="@Model.MaxPriority" placeholder="∞" />
+                </div>
+            </div>
+
+            <hr class="my-3" />
+            <div class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:.06em;">Sort</div>
+
+            <div class="mb-3">
+                <label class="form-label small text-muted">Sort By</label>
+                <select name="SortBy" class="form-select form-select-sm">
+                    @foreach (ProjectSortBy val in Enum.GetValues<ProjectSortBy>())
+                    {
+                        <option value="@val" selected="@(Model.SortBy == val)">@val</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="Descending" id="descCheck"
+                           value="true" @(Model.Descending ? "checked" : "") />
+                    <label class="form-check-label small" for="descCheck">Descending</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small text-muted">Per Page</label>
+                <select name="PageSize" class="form-select form-select-sm">
+                    @foreach (var size in new[] { 10, 25, 50 })
+                    {
+                        <option value="@size" selected="@(Model.PageSize == size)">@size</option>
+                    }
+                </select>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2 me-1"></i>Apply Filters
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Reset
+                </a>
+            </div>
+
+        </form>
     </div>
 </div>
 
-<!-- Results -->
+<!-- ── Results ────────────────────────────────────────────────────────── -->
 @if (!Model.Items.Any())
 {
     <div class="text-center py-5 text-muted">
@@ -97,74 +147,73 @@ else
         </span>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Name</th>
-                    <th>Customer</th>
-                    <th>Executor</th>
-                    <th>Manager</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th class="text-center">Priority</th>
-                    <th class="text-center">Team</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var p in Model.Items)
-                {
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
                     <tr>
-                        <td>
-                            <a asp-action="Detail" asp-route-id="@p.Id" class="fw-semibold text-decoration-none">
-                                @p.Name
-                            </a>
-                        </td>
-                        <td class="text-muted small">@p.CustomerCompany</td>
-                        <td class="text-muted small">@p.ExecutingCompany</td>
-                        <td class="small">@p.ProjectManager.FullName</td>
-                        <td class="small">@p.StartDate.ToString("dd MMM yyyy")</td>
-                        <td class="small">@p.EndDate.ToString("dd MMM yyyy")</td>
-                        <td class="text-center">
-                            <span class="badge bg-secondary">@p.Priority</span>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge bg-light text-dark border">
-                                <i class="bi bi-people me-1"></i>@p.Employees.Count
-                            </span>
-                        </td>
-                        <td class="text-end">
-                            <a asp-action="Detail" asp-route-id="@p.Id"
-                               class="btn btn-sm btn-outline-primary me-1" title="View">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a asp-action="Edit" asp-route-id="@p.Id"
-                               class="btn btn-sm btn-outline-secondary me-1" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline"
-                                  onsubmit="return confirm('Delete project «@p.Name»? This cannot be undone.')">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </td>
+                        <th>Name</th>
+                        <th>Customer</th>
+                        <th>Executor</th>
+                        <th>Manager</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th class="text-center">Priority</th>
+                        <th class="text-center">Team</th>
+                        <th></th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Detail" asp-route-id="@p.Id" class="fw-semibold text-decoration-none">
+                                    @p.Name
+                                </a>
+                            </td>
+                            <td class="text-muted small">@p.CustomerCompany</td>
+                            <td class="text-muted small">@p.ExecutingCompany</td>
+                            <td class="small">@p.ProjectManager.FullName</td>
+                            <td class="small">@p.StartDate.ToString("dd MMM yyyy")</td>
+                            <td class="small">@p.EndDate.ToString("dd MMM yyyy")</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@p.Priority</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-people me-1"></i>@p.Employees.Count
+                                </span>
+                            </td>
+                            <td class="text-end" style="white-space:nowrap;">
+                                <a asp-action="Edit" asp-route-id="@p.Id"
+                                   class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete project «@p.Name»? This cannot be undone.')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Pagination -->
     @if (Model.TotalPages > 1)
     {
-        <nav>
+        <nav class="mt-3">
             <ul class="pagination pagination-sm justify-content-center">
                 <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
                     <a class="page-link" asp-action="Index"
                        asp-route-page="@(Model.Page - 1)"
                        asp-route-pageSize="@Model.PageSize"
+                       asp-route-nameSearch="@Model.NameSearch"
                        asp-route-startDateFrom="@Model.StartDateFrom?.ToString("yyyy-MM-dd")"
                        asp-route-startDateTo="@Model.StartDateTo?.ToString("yyyy-MM-dd")"
                        asp-route-minPriority="@Model.MinPriority"
@@ -180,6 +229,7 @@ else
                         <a class="page-link" asp-action="Index"
                            asp-route-page="@i"
                            asp-route-pageSize="@Model.PageSize"
+                           asp-route-nameSearch="@Model.NameSearch"
                            asp-route-startDateFrom="@Model.StartDateFrom?.ToString("yyyy-MM-dd")"
                            asp-route-startDateTo="@Model.StartDateTo?.ToString("yyyy-MM-dd")"
                            asp-route-minPriority="@Model.MinPriority"
@@ -192,6 +242,7 @@ else
                     <a class="page-link" asp-action="Index"
                        asp-route-page="@(Model.Page + 1)"
                        asp-route-pageSize="@Model.PageSize"
+                       asp-route-nameSearch="@Model.NameSearch"
                        asp-route-startDateFrom="@Model.StartDateFrom?.ToString("yyyy-MM-dd")"
                        asp-route-startDateTo="@Model.StartDateTo?.ToString("yyyy-MM-dd")"
                        asp-route-minPriority="@Model.MinPriority"
@@ -204,4 +255,26 @@ else
             </ul>
         </nav>
     }
+}
+
+@section Scripts {
+    <script src="~/js/employee-autocomplete.js" asp-append-version="true"></script>
+    <script>
+        initProjectSearch({
+            searchInput: document.getElementById('proj-search'),
+            dropdown:    document.getElementById('proj-dropdown'),
+            searchUrl:   '/projects/search'
+        });
+
+        function applyNameSearch() {
+            var term = document.getElementById('proj-search').value;
+            document.querySelector('#filter-form input[name="NameSearch"]').value = term;
+            document.getElementById('filter-form').submit();
+        }
+
+        document.getElementById('proj-search-btn').addEventListener('click', applyNameSearch);
+        document.getElementById('proj-search').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') applyNameSearch();
+        });
+    </script>
 }

@@ -2,6 +2,7 @@ using BusinessLogic.Common;
 using BusinessLogic.Employees;
 using BusinessLogic.Employees.Commands;
 using BusinessLogic.Employees.Queries;
+using BusinessLogic.Projects.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Web.ViewModels.Employees;
@@ -29,8 +30,13 @@ public class EmployeesController : Controller
     {
         try
         {
-            var employee = await _mediator.Send(new GetEmployeeByIdQuery { Id = id }, ct);
-            return View(employee);
+            var employeeTask = _mediator.Send(new GetEmployeeByIdQuery { Id = id }, ct);
+            var projectsTask = _mediator.Send(new GetEmployeeProjectsQuery { EmployeeId = id }, ct);
+
+            await Task.WhenAll(employeeTask, projectsTask);
+
+            ViewBag.EmployeeProjects = projectsTask.Result;
+            return View(employeeTask.Result);
         }
         catch (EntityNotFoundException)
         {

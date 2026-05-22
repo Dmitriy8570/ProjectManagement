@@ -75,21 +75,16 @@
                         </div>
 
                         <div class="col-12">
-                            <label asp-for="ProjectManagerId" class="form-label"></label>
+                            <label asp-for="ProjectManagerId" class="form-label">Project Manager</label>
                             <div class="autocomplete-wrapper">
                                 <input type="text" id="pm-search"
                                        class="form-control"
                                        placeholder="Search employees by name…"
-                                       autocomplete="off"
-                                       value="@Model.ProjectManagerName" />
+                                       autocomplete="off" />
                                 <div id="pm-dropdown" class="autocomplete-dropdown"></div>
                             </div>
+                            <div id="pm-chip-container"></div>
                             <input asp-for="ProjectManagerId" type="hidden" id="pm-id" />
-                            <div id="pm-selected" class="mt-2" @(Model.ProjectManagerId > 0 ? "" : "style=\"display:none;\"")>
-                                <span class="badge bg-info text-dark" id="pm-name">@Model.ProjectManagerName</span>
-                                <button type="button" class="btn btn-link btn-sm text-muted p-0 ms-1"
-                                        id="pm-clear">remove</button>
-                            </div>
                             <span asp-validation-for="ProjectManagerId" class="text-danger small"></span>
                         </div>
                     </div>
@@ -112,15 +107,13 @@
     <script src="~/js/employee-autocomplete.js" asp-append-version="true"></script>
     <script>
         initSingleAutocomplete({
-            searchInput: document.getElementById('pm-search'),
-            dropdown: document.getElementById('pm-dropdown'),
-            hiddenInput: document.getElementById('pm-id'),
-            selectedDisplay: document.getElementById('pm-selected'),
-            selectedName: document.getElementById('pm-name'),
-            clearBtn: document.getElementById('pm-clear'),
-            searchUrl: '/employees/search',
-            initialId: @Model.ProjectManagerId,
-            initialName: '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjectManagerName ?? "").Trim('"'))'
+            searchInput:   document.getElementById('pm-search'),
+            dropdown:      document.getElementById('pm-dropdown'),
+            hiddenInput:   document.getElementById('pm-id'),
+            chipContainer: document.getElementById('pm-chip-container'),
+            searchUrl:     '/employees/search',
+            initialId:     @Model.ProjectManagerId,
+            initialName:   '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjectManagerName ?? "").Trim('"'))'
         });
     </script>
 }

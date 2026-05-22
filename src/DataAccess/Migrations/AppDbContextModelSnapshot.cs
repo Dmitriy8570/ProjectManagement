@@ -17,6 +17,43 @@ namespace DataAccess.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
 
+            modelBuilder.Entity("BusinessLogic.Documents.ProjectDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StoredName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectDocuments");
+                });
+
             modelBuilder.Entity("BusinessLogic.Employees.Employee", b =>
                 {
                     b.Property<int>("Id")
@@ -110,6 +147,15 @@ namespace DataAccess.Migrations
                     b.HasIndex("ProjectsId");
 
                     b.ToTable("ProjectEmployees", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessLogic.Documents.ProjectDocument", b =>
+                {
+                    b.HasOne("BusinessLogic.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BusinessLogic.Projects.Project", b =>

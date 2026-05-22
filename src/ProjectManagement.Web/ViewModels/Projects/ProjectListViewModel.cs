@@ -4,6 +4,7 @@ namespace ProjectManagement.Web.ViewModels.Projects;
 
 public class ProjectListViewModel
 {
+    public string? NameSearch { get; set; }
     public DateTime? StartDateFrom { get; set; }
     public DateTime? StartDateTo { get; set; }
     public int? MinPriority { get; set; }
@@ -16,4 +17,9 @@ public class ProjectListViewModel
     public IReadOnlyList<ProjectDto> Items { get; set; } = [];
     public int TotalCount { get; set; }
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+
+    public bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(NameSearch) ||
+        StartDateFrom.HasValue || StartDateTo.HasValue ||
+        MinPriority.HasValue   || MaxPriority.HasValue;
 }
