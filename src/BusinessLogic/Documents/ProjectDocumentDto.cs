@@ -7,7 +7,6 @@ public record ProjectDocumentDto
     public string FileName { get; init; } = default!;
     public string ContentType { get; init; } = default!;
     public long SizeBytes { get; init; }
-    public DateTime UploadedAt { get; init; }
 }
 
 internal static class DocumentMapping
