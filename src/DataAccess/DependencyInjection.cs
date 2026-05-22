@@ -1,6 +1,8 @@
+using BusinessLogic.Documents;
 using BusinessLogic.Employees;
 using BusinessLogic.Projects;
 using DataAccess;
+using DataAccess.Infrastructure;
 using DataAccess.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -51,5 +53,10 @@ public static class DependencyInjection
         // unit of work spans the whole request.
         builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+        builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+
+        builder.Services.Configure<FileStorageOptions>(
+            builder.Configuration.GetSection("FileStorage"));
+        builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
     }
 }

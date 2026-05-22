@@ -1,3 +1,4 @@
+using BusinessLogic.Documents;
 using BusinessLogic.Employees;
 using BusinessLogic.Projects;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Project> Projects => Set<Project>();
+    public DbSet<ProjectDocument> ProjectDocuments => Set<ProjectDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

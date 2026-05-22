@@ -33,6 +33,23 @@ internal static class DomainGuard
         return trimmed;
     }
 
+    /// <summary>
+    /// Validates an optional text field: trims whitespace and enforces max length.
+    /// Null or blank values are allowed and stored as an empty string.
+    /// </summary>
+    public static string OptionalText(string? value, string field, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var trimmed = value.Trim();
+        if (trimmed.Length > maxLength)
+            throw new DomainValidationException(
+                $"'{field}' cannot be longer than {maxLength} characters.");
+
+        return trimmed;
+    }
+
     public static int NonNegative(int value, string field) =>
         value < 0
             ? throw new DomainValidationException($"'{field}' cannot be negative.")

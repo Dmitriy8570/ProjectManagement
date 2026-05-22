@@ -1,0 +1,119 @@
+@model EditProjectViewModel
+@{
+    ViewData["Title"] = $"Edit — {Model.Name}";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Projects</a></li>
+        <li class="breadcrumb-item">
+            <a asp-action="Detail" asp-route-id="@Model.Id">@Model.Name</a>
+        </li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pencil-square me-2"></i>Edit Project
+            </div>
+            <div class="card-body">
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Any()))
+                {
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
+                    </div>
+                }
+
+                <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="StartDate" class="form-label"></label>
+                            <input asp-for="StartDate" type="date" class="form-control"
+                                   value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="StartDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="EndDate" class="form-label"></label>
+                            <input asp-for="EndDate" type="date" class="form-control"
+                                   value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="EndDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Priority" class="form-label"></label>
+                            <input asp-for="Priority" type="number" min="0" class="form-control" />
+                            <span asp-validation-for="Priority" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="CustomerCompany" class="form-label"></label>
+                            <input asp-for="CustomerCompany" class="form-control" />
+                            <span asp-validation-for="CustomerCompany" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ExecutingCompany" class="form-label"></label>
+                            <input asp-for="ExecutingCompany" class="form-control" />
+                            <span asp-validation-for="ExecutingCompany" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="ProjectManagerId" class="form-label">Project Manager</label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="pm-search"
+                                       class="form-control"
+                                       placeholder="Search employees by name…"
+                                       autocomplete="off" />
+                                <div id="pm-dropdown" class="autocomplete-dropdown"></div>
+                            </div>
+                            <div id="pm-chip-container"></div>
+                            <input asp-for="ProjectManagerId" type="hidden" id="pm-id" />
+                            <span asp-validation-for="ProjectManagerId" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Save Changes
+                        </button>
+                        <a asp-action="Detail" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/employee-autocomplete.js" asp-append-version="true"></script>
+    <script>
+        initSingleAutocomplete({
+            searchInput:   document.getElementById('pm-search'),
+            dropdown:      document.getElementById('pm-dropdown'),
+            hiddenInput:   document.getElementById('pm-id'),
+            chipContainer: document.getElementById('pm-chip-container'),
+            searchUrl:     '/employees/search',
+            initialId:     @Model.ProjectManagerId,
+            initialName:   '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjectManagerName ?? "").Trim('"'))'
+        });
+    </script>
+}

@@ -25,18 +25,18 @@ public class Employee
     // so invariants are enforced.
     private Employee() { }
 
-    public Employee(string firstName, string lastName, string patronymic, string email)
+    public Employee(string firstName, string lastName, string? patronymic, string email)
     {
-        FirstName = DomainGuard.NotBlank(firstName, nameof(firstName), maxLength: 100);
-        LastName = DomainGuard.NotBlank(lastName, nameof(lastName), maxLength: 100);
-        Patronymic = DomainGuard.NotBlank(patronymic, nameof(patronymic), maxLength: 100);
-        Email = DomainGuard.Email(email, nameof(email), maxLength: 100);
+        FirstName  = DomainGuard.NotBlank(firstName, nameof(firstName), maxLength: 100);
+        LastName   = DomainGuard.NotBlank(lastName, nameof(lastName), maxLength: 100);
+        Patronymic = DomainGuard.OptionalText(patronymic, nameof(patronymic), maxLength: 100);
+        Email      = DomainGuard.Email(email, nameof(email), maxLength: 100);
     }
 
     /// <summary>
     /// Partial update: a <c>null</c> argument leaves the corresponding field
     /// unchanged. Validation runs on every non-null value so the entity can
-    /// never end up in an invalid state.
+    /// never end up in an invalid state. An empty string for Patronymic clears it.
     /// </summary>
     public void Update(
         string? firstName = null,
@@ -51,7 +51,7 @@ public class Employee
             LastName = DomainGuard.NotBlank(lastName, nameof(lastName), maxLength: 100);
 
         if (patronymic is not null)
-            Patronymic = DomainGuard.NotBlank(patronymic, nameof(patronymic), maxLength: 100);
+            Patronymic = DomainGuard.OptionalText(patronymic, nameof(patronymic), maxLength: 100);
 
         if (email is not null)
             Email = DomainGuard.Email(email, nameof(email), maxLength: 100);

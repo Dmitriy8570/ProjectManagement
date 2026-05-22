@@ -1,0 +1,23 @@
+<Configuration>
+
+  <Add OfficeClientEdition="64" Channel="Current">
+    <Product ID="ProPlus2024Volume">
+      <Language ID="en-us" />
+      <Language ID="ru-ru" />
+      <ExcludeApp ID="Lync" />
+    </Product>
+    <Product ID="VisioPro2024Volume">
+      <Language ID="en-us" />
+      <Language ID="ru-ru" />
+    </Product>
+    <Product ID="ProjectPro2024Volume">
+      <Language ID="en-us" />
+      <Language ID="ru-ru" />
+    </Product>
+  </Add>
+
+  <Remove All="True" />
+  <!--  <RemoveMSI All="True" /> -->
+  <!--  <Display Level="None" AcceptEULA="TRUE" />  -->
+  <!--  <Property Name="AUTOACTIVATE" Value="1" />  -->
+</Configuration>

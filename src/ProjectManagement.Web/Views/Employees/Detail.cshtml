@@ -1,0 +1,121 @@
+@model EmployeeDto
+@using BusinessLogic.Projects.Queries
+@{
+    ViewData["Title"] = Model.FullName;
+    var projects = ViewBag.EmployeeProjects as EmployeeProjectsDto ?? new EmployeeProjectsDto();
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Employees</a></li>
+        <li class="breadcrumb-item active">@Model.FullName</li>
+    </ol>
+</nav>
+
+<div class="pm-page-header">
+    <h2><i class="bi bi-person-circle"></i>@Model.FullName</h2>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+              onsubmit="return confirm('Delete @Model.FullName? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i>Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Personal information -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Personal Information</div>
+            <div class="card-body">
+                <dl class="row mb-0" style="row-gap:.25rem;">
+                    <dt class="col-5 text-muted small">Last Name</dt>
+                    <dd class="col-7 mb-0">@Model.LastName</dd>
+
+                    <dt class="col-5 text-muted small">First Name</dt>
+                    <dd class="col-7 mb-0">@Model.FirstName</dd>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Patronymic))
+                    {
+                        <dt class="col-5 text-muted small">Patronymic</dt>
+                        <dd class="col-7 mb-0">@Model.Patronymic</dd>
+                    }
+
+                    <dt class="col-5 text-muted small">Email</dt>
+                    <dd class="col-7 mb-0">
+                        <a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects as manager -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-person-badge me-2"></i>Projects as Manager</span>
+                <span class="badge bg-secondary">@projects.ManagedProjects.Count</span>
+            </div>
+            <div class="card-body p-0">
+                @if (projects.ManagedProjects.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var p in projects.ManagedProjects)
+                        {
+                            <li class="list-group-item px-3 py-2">
+                                <a asp-controller="Projects" asp-action="Detail" asp-route-id="@p.Id"
+                                   class="text-decoration-none fw-semibold d-block">@p.Name</a>
+                                <small class="text-muted">
+                                    @p.StartDate.ToString("dd MMM yyyy") — @p.EndDate.ToString("dd MMM yyyy")
+                                </small>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted small px-3 py-3 mb-0">Not a manager on any project.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects as participant -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-people me-2"></i>Projects as Participant</span>
+                <span class="badge bg-secondary">@projects.ParticipantProjects.Count</span>
+            </div>
+            <div class="card-body p-0">
+                @if (projects.ParticipantProjects.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var p in projects.ParticipantProjects)
+                        {
+                            <li class="list-group-item px-3 py-2">
+                                <a asp-controller="Projects" asp-action="Detail" asp-route-id="@p.Id"
+                                   class="text-decoration-none fw-semibold d-block">@p.Name</a>
+                                <small class="text-muted">
+                                    @p.StartDate.ToString("dd MMM yyyy") — @p.EndDate.ToString("dd MMM yyyy")
+                                </small>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted small px-3 py-3 mb-0">Not a participant on any project.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
