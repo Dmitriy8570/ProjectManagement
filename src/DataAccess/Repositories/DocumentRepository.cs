@@ -19,7 +19,6 @@ public class DocumentRepository : IDocumentRepository
         await _db.ProjectDocuments
             .AsNoTracking()
             .Where(d => d.ProjectId == projectId)
-            .OrderByDescending(d => d.UploadedAt)
             .ToListAsync(ct);
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct)

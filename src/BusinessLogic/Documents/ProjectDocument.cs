@@ -1,3 +1,5 @@
+using BusinessLogic.Common;
+
 namespace BusinessLogic.Documents;
 
 public class ProjectDocument
@@ -13,7 +15,6 @@ public class ProjectDocument
 
     public string ContentType { get; private set; } = default!;
     public long SizeBytes { get; private set; }
-    public DateTime UploadedAt { get; private set; }
 
     // Required by EF Core.
     private ProjectDocument() { }
@@ -25,22 +26,10 @@ public class ProjectDocument
         string contentType,
         long sizeBytes)
     {
-        if (projectId <= 0)
-            throw new ArgumentException("Project ID must be positive.", nameof(projectId));
-        if (string.IsNullOrWhiteSpace(fileName))
-            throw new ArgumentException("File name is required.", nameof(fileName));
-        if (string.IsNullOrWhiteSpace(storedName))
-            throw new ArgumentException("Stored name is required.", nameof(storedName));
-        if (string.IsNullOrWhiteSpace(contentType))
-            throw new ArgumentException("Content type is required.", nameof(contentType));
-        if (sizeBytes < 0)
-            throw new ArgumentException("Size cannot be negative.", nameof(sizeBytes));
-
-        ProjectId   = projectId;
-        FileName    = fileName.Trim();
-        StoredName  = storedName;
-        ContentType = contentType;
-        SizeBytes   = sizeBytes;
-        UploadedAt  = DateTime.UtcNow;
+        ProjectId   = DomainGuard.NonNegative(projectId, nameof(projectId));
+        FileName    = DomainGuard.NotBlank(fileName, nameof(fileName), 255);
+        StoredName  = DomainGuard.NotBlank(storedName, nameof(storedName), 150);
+        ContentType = DomainGuard.NotBlank(ContentType, nameof(ContentType), 100);
+        SizeBytes   = DomainGuard.NonNegative(sizeBytes, nameof(sizeBytes));
     }
 }

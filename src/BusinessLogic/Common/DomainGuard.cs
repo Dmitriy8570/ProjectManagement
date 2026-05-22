@@ -1,4 +1,5 @@
 using System.Net.Mail;
+using System.Numerics;
 
 namespace BusinessLogic.Common;
 
@@ -50,10 +51,15 @@ internal static class DomainGuard
         return trimmed;
     }
 
-    public static int NonNegative(int value, string field) =>
-        value < 0
-            ? throw new DomainValidationException($"'{field}' cannot be negative.")
-            : value;
+    public static T NonNegative<T>(T value, string field)
+        where T : struct, INumber<T>
+    {
+        if (value < T.Zero)
+            throw new DomainValidationException($"'{field}' cannot be negative.");
+
+        return value;
+    }
+
 
     public static (DateTime Start, DateTime End) DateRange(
         DateTime start, DateTime end, string startField, string endField)

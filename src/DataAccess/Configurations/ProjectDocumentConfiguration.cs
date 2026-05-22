@@ -23,7 +23,6 @@ public class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocu
             .HasMaxLength(200);
 
         builder.Property(d => d.SizeBytes).IsRequired();
-        builder.Property(d => d.UploadedAt).IsRequired();
 
         builder.HasIndex(d => d.ProjectId);
 
