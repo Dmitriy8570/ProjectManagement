@@ -18,7 +18,6 @@ internal static class DocumentMapping
         ProjectId   = doc.ProjectId,
         FileName    = doc.FileName,
         ContentType = doc.ContentType,
-        SizeBytes   = doc.SizeBytes,
-        UploadedAt  = doc.UploadedAt
+        SizeBytes   = doc.SizeBytes
     };
 }

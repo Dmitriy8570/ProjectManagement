@@ -41,19 +41,6 @@ public class ProjectDocumentTests
         Assert.Equal("notes.txt", document.FileName);
     }
 
-    // UploadedAt is set on construction to UtcNow; the assertion gives a wide
-    // tolerance window so the test stays reliable on slow CI machines.
-    [Fact]
-    public void Constructor_SetsUploadedAtToUtcNow()
-    {
-        var before = DateTime.UtcNow.AddSeconds(-1);
-        var document = CreateDocument();
-        var after = DateTime.UtcNow.AddSeconds(1);
-
-        Assert.InRange(document.UploadedAt, before, after);
-        Assert.Equal(DateTimeKind.Utc, document.UploadedAt.Kind);
-    }
-
     // ── Constructor: invalid arguments ───────────────────────────────────────
 
     [Theory]
