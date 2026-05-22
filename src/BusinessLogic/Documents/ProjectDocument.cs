@@ -1,4 +1,5 @@
 using BusinessLogic.Common;
+using BusinessLogic.Projects;
 
 namespace BusinessLogic.Documents;
 
@@ -6,6 +7,7 @@ public class ProjectDocument
 {
     public int Id { get; private set; }
     public int ProjectId { get; private set; }
+    public Project Project { get; private set; } = default!;
 
     /// <summary>Original file name supplied by the uploader.</summary>
     public string FileName { get; private set; } = default!;
