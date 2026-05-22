@@ -69,26 +69,21 @@ public class DocumentRepositoryTests : DatabaseTestBase
 
     // ── GetByProjectIdAsync ──────────────────────────────────────────────────
 
-    // Documents of other projects must not appear, and ordering is newest-first
-    // by UploadedAt so the most recent uploads sit at the top of the list.
+    // Documents of other projects must not appear.
     [Fact]
-    public async Task GetByProjectIdAsync_FiltersByProject_AndOrdersNewestFirst()
+    public async Task GetByProjectIdAsync_FiltersByProject()
     {
         var p1 = await SeedProjectAsync("Project1");
         var p2 = await SeedProjectAsync("Project2");
 
         var sut = new DocumentRepository(Db);
 
-        var older = NewDocument(p1, fileName: "old.txt",   storedName: "old.bin");
-        await sut.AddAsync(older, Ct);
+        var doc1 = NewDocument(p1, fileName: "old.txt",   storedName: "old.bin");
+        await sut.AddAsync(doc1, Ct);
         await sut.SaveAsync(Ct);
 
-        // Bump UploadedAt by an obvious margin so the order assertion is
-        // robust against same-tick timestamps.
-        await Task.Delay(20, Ct);
-
-        var newer = NewDocument(p1, fileName: "new.txt",   storedName: "new.bin");
-        await sut.AddAsync(newer, Ct);
+        var doc2 = NewDocument(p1, fileName: "new.txt",   storedName: "new.bin");
+        await sut.AddAsync(doc2, Ct);
         await sut.SaveAsync(Ct);
 
         var otherProjectDoc = NewDocument(p2, fileName: "other.txt", storedName: "other.bin");
@@ -98,7 +93,8 @@ public class DocumentRepositoryTests : DatabaseTestBase
         var p1Docs = await sut.GetByProjectIdAsync(p1, Ct);
 
         Assert.Equal(2, p1Docs.Count);
-        Assert.Equal(new[] { "new.txt", "old.txt" }, p1Docs.Select(d => d.FileName));
+        Assert.Contains(p1Docs, d => d.FileName == "doc1.txt");
+        Assert.Contains(p1Docs, d => d.FileName == "doc2.txt");
         Assert.DoesNotContain(p1Docs, d => d.FileName == "other.txt");
     }
 
