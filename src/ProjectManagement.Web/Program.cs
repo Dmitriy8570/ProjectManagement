@@ -40,3 +40,6 @@ app.MapControllerRoute(
     pattern: "{controller=Projects}/{action=Index}/{id?}");
 
 app.Run();
+
+// Needed so WebApplicationFactory<Program> in tests can reference this type.
+public partial class Program { }

@@ -1,0 +1,37 @@
+# VCS / editor
+.git
+.gitignore
+.gitattributes
+.vs
+.vscode
+.idea
+*.user
+
+# Build artifacts (.NET)
+**/bin
+**/obj
+**/*.Backup.tmp
+
+# Local SQLite databases
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Local uploads (test data)
+**/uploads/*
+!**/uploads/.gitkeep
+
+# Frontend artifacts
+vue-client/node_modules
+vue-client/dist
+
+# Docker files (we don't need them inside images)
+**/Dockerfile
+**/.dockerignore
+docker-compose*.yml
+.env
+.env.*
+!.env.example
+
+# Tests are not built into runtime images
+Tests/

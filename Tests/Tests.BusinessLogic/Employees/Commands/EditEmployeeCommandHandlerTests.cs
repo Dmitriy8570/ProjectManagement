@@ -127,14 +127,16 @@ public class EditEmployeeCommandHandlerTests
         await _repository.DidNotReceive().SaveAsync(Arg.Any<CancellationToken>());
     }
 
+    // Blank values for FirstName/LastName violate the NotBlank guard; an invalid
+    // Email fails the email guard. Patronymic is optional and therefore not part
+    // of this theory — see Handle_BlankPatronymic_ClearsPatronymicAndSaves below.
     [Theory]
-    [InlineData("", null, null, null)]
-    [InlineData("   ", null, null, null)]
-    [InlineData(null, "", null, null)]
-    [InlineData(null, null, "   ", null)]
-    [InlineData(null, null, null, "not-an-email")]
+    [InlineData("",    null, null)]
+    [InlineData("   ", null, null)]
+    [InlineData(null,  "",   null)]
+    [InlineData(null,  null, "not-an-email")]
     public async Task Handle_InvalidFieldValue_ThrowsDomainValidationException(
-        string? firstName, string? lastName, string? patronymic, string? email)
+        string? firstName, string? lastName, string? email)
     {
         var employee = CreateEmployee(id: 5);
         _repository.GetEmployeeByIdAsync(5, Arg.Any<CancellationToken>()).Returns(employee);
@@ -145,7 +147,6 @@ public class EditEmployeeCommandHandlerTests
             {
                 FirstName = firstName,
                 LastName = lastName,
-                Patronymic = patronymic,
                 Email = email
             }
         };
@@ -154,5 +155,27 @@ public class EditEmployeeCommandHandlerTests
             () => _handler.Handle(command, CancellationToken.None));
 
         await _repository.DidNotReceive().SaveAsync(Arg.Any<CancellationToken>());
+    }
+
+    // Patronymic is optional: passing an empty/whitespace string is the
+    // intended way to clear it, so the handler must save without throwing.
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Handle_BlankPatronymic_ClearsPatronymicAndSaves(string blank)
+    {
+        var employee = CreateEmployee(id: 5, patronymic: "Old");
+        _repository.GetEmployeeByIdAsync(5, Arg.Any<CancellationToken>()).Returns(employee);
+
+        var command = new EditEmployeeCommand
+        {
+            Id = 5,
+            Data = new EditEmployeeRequest { Patronymic = blank }
+        };
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(string.Empty, employee.Patronymic);
+        await _repository.Received(1).SaveAsync(Arg.Any<CancellationToken>());
     }
 }

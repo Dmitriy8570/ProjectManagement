@@ -1,0 +1,91 @@
+name: projectmanagement
+
+# Profiles let one compose file cover the four supported combinations:
+#   frontend: vue | razor      (--profile vue   | --profile razor)
+#   database: sqlite | mssql   (no profile      | --profile mssql)
+#
+# Examples (see docker/README.md for the full matrix):
+#   docker compose --profile vue up --build
+#   docker compose --profile razor --profile mssql up --build
+
+services:
+  # REST backend consumed by the Vue SPA.
+  api:
+    profiles: [vue]
+    build:
+      context: .
+      dockerfile: src/ProjectManagement.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      Database__Provider: ${DB_PROVIDER:-Sqlite}
+      ConnectionStrings__DefaultConnection: ${DB_CONN_STR:-Data Source=/data/projectmanagement.db}
+      FileStorage__BasePath: /data/uploads
+    volumes:
+      - api-data:/data
+    ports:
+      - "${API_PORT:-5266}:8080"
+    depends_on:
+      mssql:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+
+  # Vue SPA served by nginx; nginx reverse-proxies /api/ to the api container.
+  vue-client:
+    profiles: [vue]
+    build:
+      context: ./vue-client
+    environment:
+      API_UPSTREAM: http://api:8080
+    ports:
+      - "${VUE_PORT:-5173}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Razor MVC frontend; talks to the database directly (no api dependency).
+  web:
+    profiles: [razor]
+    build:
+      context: .
+      dockerfile: src/ProjectManagement.Web/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      Database__Provider: ${DB_PROVIDER:-Sqlite}
+      ConnectionStrings__DefaultConnection: ${DB_CONN_STR:-Data Source=/data/projectmanagement.db}
+      FileStorage__BasePath: /data/uploads
+    volumes:
+      - web-data:/data
+    ports:
+      - "${WEB_PORT:-5100}:8080"
+    depends_on:
+      mssql:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+
+  mssql:
+    profiles: [mssql]
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Your_password123!}
+      MSSQL_PID: Developer
+    ports:
+      - "${MSSQL_PORT:-1433}:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" -C -No || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  api-data:
+  web-data:
+  mssql-data:

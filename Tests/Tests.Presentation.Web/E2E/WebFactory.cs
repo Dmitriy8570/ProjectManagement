@@ -8,29 +8,31 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Tests.Presentation.E2E;
+namespace Tests.Presentation.Web.E2E;
 
 /// <summary>
-/// Spins up the real ASP.NET Core pipeline against an in-memory SQLite database.
-/// One factory instance is shared across all tests in a test class via IClassFixture;
-/// ResetAsync() clears data between tests so each one starts with a clean slate
-/// while the schema is only created once.
+/// Boots the real Razor MVC pipeline against an in-memory SQLite database.
+/// Mirrors Tests.Presentation/E2E/ApiFactory so both presentation layers are
+/// exercised the same way: model binding → MediatR → handler → EF Core,
+/// plus view rendering and antiforgery for the form POST paths.
 /// </summary>
-public sealed class ApiFactory : WebApplicationFactory<Program>
+public sealed class WebFactory : WebApplicationFactory<Program>
 {
     // A single persistent connection keeps the :memory: database alive for the
     // entire lifetime of the factory — SQLite drops an in-memory database as
     // soon as the last connection to it closes.
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
 
-    // Per-factory temp directory for uploaded documents so the API's own
-    // uploads folder is never written to from tests.
+    // Per-factory temp directory for uploaded documents, so tests don't pollute
+    // the web project's own uploads folder and can be cleaned up on Dispose.
     private readonly string _uploadsPath =
-        Path.Combine(Path.GetTempPath(), "pm-api-tests-" + Guid.NewGuid().ToString("N"));
+        Path.Combine(Path.GetTempPath(), "pm-web-tests-" + Guid.NewGuid().ToString("N"));
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         _connection.Open();
+
+        builder.UseEnvironment("Development");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
@@ -40,8 +42,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             });
         });
 
-        // ConfigureTestServices runs after the application's own service
-        // registrations, so we can safely replace the production DbContext.
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<DbContextOptions<AppDbContext>>();
@@ -50,8 +50,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Creates the schema on first call (EnsureCreated is idempotent) and
-    /// truncates all tables so the next test starts with an empty database.
+    /// Creates the schema on first call and truncates tables so each test
+    /// starts on a clean slate while the schema is built only once.
     /// </summary>
     public async Task ResetAsync()
     {
@@ -60,7 +60,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 
         await db.Database.EnsureCreatedAsync();
 
-        // Delete in FK-safe order: documents and junction first, then the two entity tables.
         await db.Database.ExecuteSqlRawAsync("DELETE FROM ProjectDocuments");
         await db.Database.ExecuteSqlRawAsync("DELETE FROM ProjectEmployees");
         await db.Database.ExecuteSqlRawAsync("DELETE FROM Projects");

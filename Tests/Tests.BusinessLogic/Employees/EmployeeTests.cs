@@ -8,7 +8,7 @@ public class EmployeeTests
     private static Employee CreateEmployee(
         string firstName = "Ivan",
         string lastName = "Ivanov",
-        string patronymic = "Ivanovich",
+        string? patronymic = "Ivanovich",
         string email = "ivan@example.com") =>
         new(firstName, lastName, patronymic, email);
 
@@ -63,15 +63,21 @@ public class EmployeeTests
         Assert.Throws<DomainValidationException>(() => CreateEmployee(lastName: invalid));
     }
 
+    // Patronymic is optional by design (Russian middle name, not always present).
+    // Blank or null input must be accepted and stored as an empty string so the
+    // rest of the system can treat the column as a normal non-null value.
     [Theory]
+    [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
     [InlineData("\t")]
     [InlineData("\n")]
     [InlineData("\r")]
-    public void Constructor_WithBlankPatronymic_Throws(string invalid)
+    public void Constructor_WithBlankOrNullPatronymic_StoresEmptyString(string? blank)
     {
-        Assert.Throws<DomainValidationException>(() => CreateEmployee(patronymic: invalid));
+        var employee = CreateEmployee(patronymic: blank);
+
+        Assert.Equal(string.Empty, employee.Patronymic);
     }
 
     [Fact]
@@ -184,12 +190,19 @@ public class EmployeeTests
         Assert.Throws<DomainValidationException>(() => employee.Update(lastName: " "));
     }
 
-    [Fact]
-    public void Update_WithBlankPatronymic_Throws()
+    // Patronymic is optional, so passing a blank string through Update is the
+    // intentional way to clear a previously set value — not an error.
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("\t")]
+    public void Update_WithBlankPatronymic_ClearsPatronymic(string blank)
     {
         var employee = CreateEmployee();
 
-        Assert.Throws<DomainValidationException>(() => employee.Update(patronymic: "\t"));
+        employee.Update(patronymic: blank);
+
+        Assert.Equal(string.Empty, employee.Patronymic);
     }
 
     [Fact]
