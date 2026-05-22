@@ -1,4 +1,5 @@
 using BusinessLogic.Common;
+using BusinessLogic.Documents;
 using BusinessLogic.Employees;
 
 namespace BusinessLogic.Projects;
@@ -21,6 +22,11 @@ public class Project
     // keeps the "PM is not also a participant" invariant enforceable.
     private readonly List<Employee> _employees = new();
     public IReadOnlyCollection<Employee> Employees => _employees;
+
+
+
+    private readonly List<ProjectDocument> _projects = new();
+    public IReadOnlyCollection<ProjectDocument> Documents => _projects;
 
     // Required by EF Core to rehydrate the entity from the database.
     private Project() { }
