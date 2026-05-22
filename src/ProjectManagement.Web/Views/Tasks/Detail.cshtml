@@ -1,0 +1,117 @@
+@model BusinessLogic.Tasks.ProjectTaskDto
+@{
+    ViewData["Title"] = Model.Name;
+
+    string StatusBadge(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Done       => "bg-success",
+        ProjectTaskStatus.InProgress => "bg-primary",
+        _                            => "bg-secondary"
+    };
+
+    var returnUrl = Url.Action("Detail", new { id = Model.Id });
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Tasks</a></li>
+        <li class="breadcrumb-item">
+            <a asp-controller="Projects" asp-action="Detail" asp-route-id="@Model.ProjectId">@Model.ProjectName</a>
+        </li>
+        <li class="breadcrumb-item active">@Model.Name</li>
+    </ol>
+</nav>
+
+<div class="pm-page-header">
+    <h2>@Model.Name</h2>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+              onsubmit="return confirm('Delete task «@Model.Name»? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i>Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Task Details</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Project</dt>
+                    <dd class="col-sm-8">
+                        <a asp-controller="Projects" asp-action="Detail" asp-route-id="@Model.ProjectId"
+                           class="text-decoration-none">
+                            <i class="bi bi-folder2 me-1"></i>@Model.ProjectName
+                        </a>
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @StatusBadge(Model.Status)">@Model.Status</span>
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Priority</dt>
+                    <dd class="col-sm-8"><span class="badge bg-secondary fs-6">@Model.Priority</span></dd>
+
+                    <dt class="col-sm-4 text-muted">Author</dt>
+                    <dd class="col-sm-8">
+                        <a asp-controller="Employees" asp-action="Detail" asp-route-id="@Model.Author.Id"
+                           class="text-decoration-none">
+                            <i class="bi bi-person me-1"></i>@Model.Author.FullName
+                        </a>
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Assignee</dt>
+                    <dd class="col-sm-8">
+                        <a asp-controller="Employees" asp-action="Detail" asp-route-id="@Model.Assignee.Id"
+                           class="text-decoration-none">
+                            <i class="bi bi-person-badge me-1"></i>@Model.Assignee.FullName
+                        </a>
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Comment</dt>
+                    <dd class="col-sm-8">
+                        @if (!string.IsNullOrWhiteSpace(Model.Comment))
+                        {
+                            <pre class="mb-0" style="white-space:pre-wrap; font-family:inherit;">@Model.Comment</pre>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">—</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-arrow-repeat me-2"></i>Change Status</div>
+            <div class="card-body d-flex flex-column gap-2">
+                @foreach (ProjectTaskStatus s in Enum.GetValues<ProjectTaskStatus>())
+                {
+                    var btnClass = s switch
+                    {
+                        ProjectTaskStatus.Done       => "btn-outline-success",
+                        ProjectTaskStatus.InProgress => "btn-outline-primary",
+                        _                            => "btn-outline-secondary"
+                    };
+                    <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
+                        <input type="hidden" name="status" value="@s" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <button type="submit" class="btn @btnClass w-100" @(Model.Status == s ? "disabled" : "")>
+                            @s
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

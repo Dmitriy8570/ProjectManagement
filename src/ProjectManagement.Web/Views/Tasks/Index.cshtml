@@ -1,0 +1,299 @@
+@model TaskListViewModel
+@{
+    ViewData["Title"] = Model.ProjectId.HasValue
+        ? $"Tasks — {Model.ProjectName}"
+        : "Tasks";
+
+    string StatusBadge(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Done       => "bg-success",
+        ProjectTaskStatus.InProgress => "bg-primary",
+        _                            => "bg-secondary"
+    };
+
+    var currentUrl = Url.Action("Index", new
+    {
+        projectId = Model.ProjectId,
+        nameSearch = Model.NameSearch,
+        status = Model.Status,
+        minPriority = Model.MinPriority,
+        maxPriority = Model.MaxPriority,
+        sortBy = Model.SortBy,
+        descending = Model.Descending,
+        page = Model.Page,
+        pageSize = Model.PageSize
+    });
+}
+
+@if (Model.ProjectId.HasValue)
+{
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Projects" asp-action="Index">Projects</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Projects" asp-action="Detail" asp-route-id="@Model.ProjectId">@Model.ProjectName</a></li>
+            <li class="breadcrumb-item active">Tasks</li>
+        </ol>
+    </nav>
+
+    @* Project context banner — makes it obvious that the list below is scoped
+       to one project rather than every task in the system. *@
+    @if (Model.Project is not null)
+    {
+        <div class="card border-primary mb-3 pm-project-context">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="pm-project-context-icon">
+                            <i class="bi bi-folder2-open"></i>
+                        </div>
+                        <div>
+                            <div class="small text-uppercase text-primary fw-semibold" style="letter-spacing:.08em;">
+                                Tasks in Project
+                            </div>
+                            <h4>
+                                <a asp-controller="Projects" asp-action="Detail" asp-route-id="@Model.Project.Id">
+                                    @Model.Project.Name
+                                </a>
+                            </h4>
+                            <div class="small text-muted">
+                                <i class="bi bi-person-badge me-1"></i>@Model.Project.ProjectManager.FullName
+                                <span class="mx-2">·</span>
+                                <i class="bi bi-calendar3 me-1"></i>
+                                @Model.Project.StartDate.ToString("dd.MM.yyyy") — @Model.Project.EndDate.ToString("dd.MM.yyyy")
+                            </div>
+                        </div>
+                    </div>
+                    <a asp-controller="Projects" asp-action="Detail" asp-route-id="@Model.Project.Id"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+<div class="pm-page-header">
+    <h2><i class="bi bi-list-check"></i>
+        @(Model.ProjectId.HasValue ? "Project Tasks" : "All Tasks")
+        <span class="badge bg-secondary ms-2 fs-6">@Model.TotalCount</span>
+    </h2>
+    <a asp-action="Create" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>New Task
+    </a>
+</div>
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <button type="button" class="btn btn-outline-secondary"
+            data-bs-toggle="offcanvas" data-bs-target="#taskFilterDrawer" aria-controls="taskFilterDrawer">
+        <i class="bi bi-sliders2 me-1"></i>Filters
+        @if (Model.HasActiveFilters) { <span class="badge bg-primary ms-1">•</span> }
+    </button>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="taskFilterDrawer">
+    <div class="offcanvas-header border-bottom">
+        <h6 class="offcanvas-title fw-semibold">
+            <i class="bi bi-sliders2 me-2"></i>Filters &amp; Sort
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="get" asp-action="Index">
+            @if (Model.ProjectId.HasValue)
+            {
+                <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
+            }
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold text-uppercase text-muted" style="letter-spacing:.06em;">Task Name</label>
+                <input type="text" name="NameSearch" class="form-control" placeholder="Filter by name…" value="@Model.NameSearch" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold text-uppercase text-muted" style="letter-spacing:.06em;">Status</label>
+                <select name="Status" class="form-select form-select-sm">
+                    <option value="">Any</option>
+                    @foreach (ProjectTaskStatus val in Enum.GetValues<ProjectTaskStatus>())
+                    {
+                        <option value="@val" selected="@(Model.Status == val)">@val</option>
+                    }
+                </select>
+            </div>
+
+            <hr class="my-3" />
+            <div class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:.06em;">Priority</div>
+            <div class="row g-2 mb-3">
+                <div class="col">
+                    <label class="form-label small text-muted">Min</label>
+                    <input type="number" name="MinPriority" class="form-control form-control-sm"
+                           min="0" value="@Model.MinPriority" placeholder="0" />
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Max</label>
+                    <input type="number" name="MaxPriority" class="form-control form-control-sm"
+                           min="0" value="@Model.MaxPriority" placeholder="∞" />
+                </div>
+            </div>
+
+            <hr class="my-3" />
+            <div class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:.06em;">Sort</div>
+            <div class="mb-3">
+                <label class="form-label small text-muted">Sort By</label>
+                <select name="SortBy" class="form-select form-select-sm">
+                    @foreach (ProjectTaskSortBy val in Enum.GetValues<ProjectTaskSortBy>())
+                    {
+                        <option value="@val" selected="@(Model.SortBy == val)">@val</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3 form-check">
+                <input class="form-check-input" type="checkbox" name="Descending" id="task-desc-check"
+                       value="true" @(Model.Descending ? "checked" : "") />
+                <label class="form-check-label small" for="task-desc-check">Descending</label>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small text-muted">Per Page</label>
+                <select name="PageSize" class="form-select form-select-sm">
+                    @foreach (var size in new[] { 10, 25, 50 })
+                    {
+                        <option value="@size" selected="@(Model.PageSize == size)">@size</option>
+                    }
+                </select>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Apply Filters</button>
+                <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Items.Any())
+{
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-clipboard-x" style="font-size:3rem;"></i>
+        <p class="mt-2">No tasks found. <a asp-action="Create" asp-route-projectId="@Model.ProjectId">Create one?</a></p>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-muted small">
+            Showing @((Model.Page - 1) * Model.PageSize + 1)–@Math.Min(Model.Page * Model.PageSize, Model.TotalCount)
+            of @Model.TotalCount
+        </span>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        @if (!Model.ProjectId.HasValue) { <th>Project</th> }
+                        <th>Assignee</th>
+                        <th>Author</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Priority</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Detail" asp-route-id="@t.Id" class="fw-semibold text-decoration-none">
+                                    @t.Name
+                                </a>
+                            </td>
+                            @if (!Model.ProjectId.HasValue)
+                            {
+                                <td class="small">
+                                    <a asp-controller="Projects" asp-action="Detail" asp-route-id="@t.ProjectId" class="text-decoration-none">
+                                        @t.ProjectName
+                                    </a>
+                                </td>
+                            }
+                            <td class="small">@t.Assignee.FullName</td>
+                            <td class="small text-muted">@t.Author.FullName</td>
+                            <td class="text-center">
+                                <span class="badge @StatusBadge(t.Status)">@t.Status</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@t.Priority</span>
+                            </td>
+                            <td class="text-end" style="white-space:nowrap;">
+                                <a asp-action="Edit" asp-route-id="@t.Id"
+                                   class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete task «@t.Name»? This cannot be undone.')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-3">
+            <ul class="pagination pagination-sm justify-content-center">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-page="@(Model.Page - 1)"
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-projectId="@Model.ProjectId"
+                       asp-route-nameSearch="@Model.NameSearch"
+                       asp-route-status="@Model.Status"
+                       asp-route-minPriority="@Model.MinPriority"
+                       asp-route-maxPriority="@Model.MaxPriority"
+                       asp-route-sortBy="@Model.SortBy"
+                       asp-route-descending="@Model.Descending">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-page="@i"
+                           asp-route-pageSize="@Model.PageSize"
+                           asp-route-projectId="@Model.ProjectId"
+                           asp-route-nameSearch="@Model.NameSearch"
+                           asp-route-status="@Model.Status"
+                           asp-route-minPriority="@Model.MinPriority"
+                           asp-route-maxPriority="@Model.MaxPriority"
+                           asp-route-sortBy="@Model.SortBy"
+                           asp-route-descending="@Model.Descending">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-page="@(Model.Page + 1)"
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-projectId="@Model.ProjectId"
+                       asp-route-nameSearch="@Model.NameSearch"
+                       asp-route-status="@Model.Status"
+                       asp-route-minPriority="@Model.MinPriority"
+                       asp-route-maxPriority="@Model.MaxPriority"
+                       asp-route-sortBy="@Model.SortBy"
+                       asp-route-descending="@Model.Descending">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

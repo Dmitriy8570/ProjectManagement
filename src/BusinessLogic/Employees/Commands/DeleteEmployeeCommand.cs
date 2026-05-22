@@ -1,4 +1,5 @@
 using BusinessLogic.Common;
+using BusinessLogic.Tasks;
 using MediatR;
 
 namespace BusinessLogic.Employees.Commands;
@@ -11,10 +12,14 @@ public record DeleteEmployeeCommand : IRequest
 public class DeleteEmployeeCommandHandler : IRequestHandler<DeleteEmployeeCommand>
 {
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IProjectTaskRepository _taskRepository;
 
-    public DeleteEmployeeCommandHandler(IEmployeeRepository employeeRepository)
+    public DeleteEmployeeCommandHandler(
+        IEmployeeRepository employeeRepository,
+        IProjectTaskRepository taskRepository)
     {
         _employeeRepository = employeeRepository;
+        _taskRepository = taskRepository;
     }
 
     public async Task Handle(DeleteEmployeeCommand request, CancellationToken ct)
@@ -25,6 +30,12 @@ public class DeleteEmployeeCommandHandler : IRequestHandler<DeleteEmployeeComman
         if (await _employeeRepository.IsProjectManagerAsync(request.Id, ct))
             throw new DomainValidationException(
                 "Cannot delete an employee who is currently a project manager.");
+
+        // Author and assignee FKs on ProjectTasks are also RESTRICT — block the
+        // delete with a friendly error rather than letting EF Core throw.
+        if (await _taskRepository.IsReferencedByAnyTaskAsync(request.Id, ct))
+            throw new DomainValidationException(
+                "Cannot delete an employee who is referenced by tasks (author or assignee).");
 
         var deleted = await _employeeRepository.DeleteEmployeeAsync(request.Id, ct);
 

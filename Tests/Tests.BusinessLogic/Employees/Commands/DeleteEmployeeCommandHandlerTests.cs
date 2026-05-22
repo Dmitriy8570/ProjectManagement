@@ -1,6 +1,7 @@
 using BusinessLogic.Common;
 using BusinessLogic.Employees;
 using BusinessLogic.Employees.Commands;
+using BusinessLogic.Tasks;
 using NSubstitute;
 
 namespace Tests.BusinessLogic.Employees.Commands;
@@ -8,12 +9,14 @@ namespace Tests.BusinessLogic.Employees.Commands;
 public class DeleteEmployeeCommandHandlerTests
 {
     private readonly IEmployeeRepository _repository;
+    private readonly IProjectTaskRepository _taskRepository;
     private readonly DeleteEmployeeCommandHandler _handler;
 
     public DeleteEmployeeCommandHandlerTests()
     {
         _repository = Substitute.For<IEmployeeRepository>();
-        _handler = new DeleteEmployeeCommandHandler(_repository);
+        _taskRepository = Substitute.For<IProjectTaskRepository>();
+        _handler = new DeleteEmployeeCommandHandler(_repository, _taskRepository);
     }
 
     [Fact]
@@ -29,9 +32,23 @@ public class DeleteEmployeeCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_EmployeeReferencedByTask_ThrowsAndSkipsDelete()
+    {
+        _repository.IsProjectManagerAsync(1, Arg.Any<CancellationToken>()).Returns(false);
+        _taskRepository.IsReferencedByAnyTaskAsync(1, Arg.Any<CancellationToken>()).Returns(true);
+        var command = new DeleteEmployeeCommand { Id = 1 };
+
+        await Assert.ThrowsAsync<DomainValidationException>(
+            () => _handler.Handle(command, CancellationToken.None));
+
+        await _repository.DidNotReceive().DeleteEmployeeAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_EmployeeNotFound_ThrowsEntityNotFoundException()
     {
         _repository.IsProjectManagerAsync(99, Arg.Any<CancellationToken>()).Returns(false);
+        _taskRepository.IsReferencedByAnyTaskAsync(99, Arg.Any<CancellationToken>()).Returns(false);
         _repository.DeleteEmployeeAsync(99, Arg.Any<CancellationToken>()).Returns(false);
         var command = new DeleteEmployeeCommand { Id = 99 };
 
@@ -43,6 +60,7 @@ public class DeleteEmployeeCommandHandlerTests
     public async Task Handle_ValidDelete_DeletesWithoutCallingSave()
     {
         _repository.IsProjectManagerAsync(1, Arg.Any<CancellationToken>()).Returns(false);
+        _taskRepository.IsReferencedByAnyTaskAsync(1, Arg.Any<CancellationToken>()).Returns(false);
         _repository.DeleteEmployeeAsync(1, Arg.Any<CancellationToken>()).Returns(true);
         var command = new DeleteEmployeeCommand { Id = 1 };
 

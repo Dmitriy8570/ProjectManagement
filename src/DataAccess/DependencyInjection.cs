@@ -1,6 +1,7 @@
 using BusinessLogic.Documents;
 using BusinessLogic.Employees;
 using BusinessLogic.Projects;
+using BusinessLogic.Tasks;
 using DataAccess;
 using DataAccess.Infrastructure;
 using DataAccess.Repositories;
@@ -54,6 +55,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
         builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+        builder.Services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
 
         builder.Services.Configure<FileStorageOptions>(
             builder.Configuration.GetSection("FileStorage"));

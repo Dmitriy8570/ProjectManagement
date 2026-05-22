@@ -12,6 +12,7 @@ function closeSb() { open.value = false }
 
 const title = computed(() => {
   if (route.path.startsWith('/employees')) return 'Employees'
+  if (route.path.startsWith('/tasks'))     return 'Tasks'
   if (route.path.startsWith('/projects'))  return 'Projects'
   return 'PM System'
 })
@@ -32,6 +33,9 @@ function isActive(prefix: string) {
         <RouterLink to="/projects"  class="pm-nav-link" :class="{ active: isActive('/projects') }"  @click="closeSb">
           <i class="bi bi-folder2-open"></i>Projects
         </RouterLink>
+        <RouterLink to="/tasks" class="pm-nav-link" :class="{ active: isActive('/tasks') }" @click="closeSb">
+          <i class="bi bi-list-check"></i>Tasks
+        </RouterLink>
         <RouterLink to="/employees" class="pm-nav-link" :class="{ active: isActive('/employees') }" @click="closeSb">
           <i class="bi bi-people"></i>Employees
         </RouterLink>
@@ -39,6 +43,9 @@ function isActive(prefix: string) {
         <div class="pm-nav-section-label">Create</div>
         <RouterLink to="/projects/create"  class="pm-nav-link" :class="{ active: route.path === '/projects/create' }"  @click="closeSb">
           <i class="bi bi-plus-circle"></i>New Project
+        </RouterLink>
+        <RouterLink to="/tasks/create" class="pm-nav-link" :class="{ active: route.path === '/tasks/create' }" @click="closeSb">
+          <i class="bi bi-plus-square"></i>New Task
         </RouterLink>
         <RouterLink to="/employees/create" class="pm-nav-link" :class="{ active: route.path === '/employees/create' }" @click="closeSb">
           <i class="bi bi-person-plus"></i>Add Employee

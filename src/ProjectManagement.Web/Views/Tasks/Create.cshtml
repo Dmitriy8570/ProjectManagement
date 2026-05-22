@@ -1,0 +1,200 @@
+@model CreateTaskViewModel
+@{
+    ViewData["Title"] = "New Task";
+
+    // The assignee dropdown starts populated with whichever project is selected
+    // on page load; project changes refresh it via /tasks/project-members.
+    var initialMembers = new List<EmployeeDto>();
+    if (Model.SelectedProject is not null)
+    {
+        initialMembers.Add(Model.SelectedProject.ProjectManager);
+        initialMembers.AddRange(Model.SelectedProject.Employees);
+    }
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Tasks</a></li>
+        <li class="breadcrumb-item active">New Task</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Any()))
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Please fix the following errors:</strong>
+                <ul class="mb-0 mt-1">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-circle me-2"></i>Create New Task</div>
+            <div class="card-body">
+
+                <form asp-action="Create" method="post">
+                    <input asp-for="ProjectLocked" type="hidden" />
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="ProjectId" class="form-label"></label>
+                            @if (Model.ProjectLocked)
+                            {
+                                <select id="ProjectId" class="form-select" disabled>
+                                    @foreach (var p in Model.AvailableProjects)
+                                    {
+                                        <option value="@p.Id" selected="@(Model.ProjectId == p.Id)">@p.Name</option>
+                                    }
+                                </select>
+                                @* Disabled selects don't post back; re-send the value via a hidden input. *@
+                                <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
+                            }
+                            else
+                            {
+                                <select asp-for="ProjectId" id="ProjectId" class="form-select">
+                                    <option value="0" disabled selected="@(Model.ProjectId == 0)">Select a project…</option>
+                                    @foreach (var p in Model.AvailableProjects)
+                                    {
+                                        <option value="@p.Id" selected="@(Model.ProjectId == p.Id)">@p.Name</option>
+                                    }
+                                </select>
+                            }
+                            <span asp-validation-for="ProjectId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" placeholder="e.g. Migrate to .NET 10" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Priority" class="form-label"></label>
+                            <input asp-for="Priority" type="number" min="0" class="form-control" />
+                            <span asp-validation-for="Priority" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Status" class="form-label"></label>
+                            <select asp-for="Status" class="form-select">
+                                @foreach (ProjectTaskStatus val in Enum.GetValues<ProjectTaskStatus>())
+                                {
+                                    <option value="@val">@val</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="AuthorId" class="form-label"></label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="author-search" class="form-control"
+                                       placeholder="Start typing a name…" autocomplete="off" />
+                                <div id="author-dropdown" class="autocomplete-dropdown"></div>
+                            </div>
+                            <div id="author-chip-container"></div>
+                            <input asp-for="AuthorId" type="hidden" id="author-id" />
+                            <span asp-validation-for="AuthorId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="AssigneeId" class="form-label"></label>
+                            <select asp-for="AssigneeId" id="AssigneeId" class="form-select">
+                                <option value="0" disabled selected="@(Model.AssigneeId == 0)">
+                                    @(Model.ProjectId == 0 ? "Select a project first" : "Select a team member…")
+                                </option>
+                                @foreach (var e in initialMembers)
+                                {
+                                    <option value="@e.Id" selected="@(Model.AssigneeId == e.Id)">@e.FullName</option>
+                                }
+                            </select>
+                            <div class="form-text">Assignee must be a member of the selected project.</div>
+                            <span asp-validation-for="AssigneeId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Comment" class="form-label"></label>
+                            <textarea asp-for="Comment" class="form-control" rows="3"
+                                      placeholder="Optional notes about the task…"></textarea>
+                            <span asp-validation-for="Comment" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Create Task
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/employee-autocomplete.js" asp-append-version="true"></script>
+    <script>
+        initSingleAutocomplete({
+            searchInput:   document.getElementById('author-search'),
+            dropdown:      document.getElementById('author-dropdown'),
+            hiddenInput:   document.getElementById('author-id'),
+            chipContainer: document.getElementById('author-chip-container'),
+            searchUrl:     '/employees/search',
+            initialId:     @Model.AuthorId,
+            initialName:   '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AuthorName ?? "").Trim('"'))'
+        });
+
+        (function () {
+            const projectSel  = document.getElementById('ProjectId');
+            const assigneeSel = document.getElementById('AssigneeId');
+            if (!projectSel || projectSel.disabled) return; // locked context: members already populated
+
+            projectSel.addEventListener('change', async function () {
+                const id = parseInt(projectSel.value, 10);
+                assigneeSel.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '0';
+                placeholder.disabled = true;
+                placeholder.selected = true;
+
+                if (!id || id <= 0) {
+                    placeholder.textContent = 'Select a project first';
+                    assigneeSel.appendChild(placeholder);
+                    return;
+                }
+
+                placeholder.textContent = 'Loading…';
+                assigneeSel.appendChild(placeholder);
+
+                try {
+                    const res = await fetch('/tasks/project-members?projectId=' + id);
+                    const members = await res.json();
+                    assigneeSel.innerHTML = '';
+                    const ph = document.createElement('option');
+                    ph.value = '0';
+                    ph.disabled = true;
+                    ph.selected = true;
+                    ph.textContent = 'Select a team member…';
+                    assigneeSel.appendChild(ph);
+                    members.forEach(function (m) {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.textContent = m.fullName;
+                        assigneeSel.appendChild(opt);
+                    });
+                } catch {
+                    placeholder.textContent = 'Failed to load team members';
+                }
+            });
+        })();
+    </script>
+}

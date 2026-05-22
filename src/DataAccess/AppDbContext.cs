@@ -1,6 +1,7 @@
 using BusinessLogic.Documents;
 using BusinessLogic.Employees;
 using BusinessLogic.Projects;
+using BusinessLogic.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess;
@@ -12,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectDocument> ProjectDocuments => Set<ProjectDocument>();
+    public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

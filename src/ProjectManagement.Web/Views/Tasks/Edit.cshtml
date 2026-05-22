@@ -1,0 +1,108 @@
+@model EditTaskViewModel
+@{
+    ViewData["Title"] = $"Edit — {Model.Name}";
+
+    var members = new List<EmployeeDto>();
+    if (Model.Project is not null)
+    {
+        members.Add(Model.Project.ProjectManager);
+        members.AddRange(Model.Project.Employees);
+    }
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Tasks</a></li>
+        <li class="breadcrumb-item"><a asp-action="Detail" asp-route-id="@Model.Id">@Model.Name</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Any()))
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Please fix the following errors:</strong>
+                <ul class="mb-0 mt-1">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header"><i class="bi bi-pencil-square me-2"></i>Edit Task</div>
+            <div class="card-body">
+
+                <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                    <input asp-for="Id" type="hidden" />
+                    <input asp-for="ProjectId" type="hidden" />
+                    <input asp-for="ProjectName" type="hidden" />
+
+                    <div class="mb-3 small text-muted">
+                        <i class="bi bi-folder2 me-1"></i>Project:
+                        <a asp-controller="Projects" asp-action="Detail" asp-route-id="@Model.ProjectId">
+                            @Model.ProjectName
+                        </a>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Priority" class="form-label"></label>
+                            <input asp-for="Priority" type="number" min="0" class="form-control" />
+                            <span asp-validation-for="Priority" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Status" class="form-label"></label>
+                            <select asp-for="Status" class="form-select">
+                                @foreach (ProjectTaskStatus val in Enum.GetValues<ProjectTaskStatus>())
+                                {
+                                    <option value="@val">@val</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="AssigneeId" class="form-label"></label>
+                            <select asp-for="AssigneeId" class="form-select">
+                                <option value="0" disabled selected="@(Model.AssigneeId == 0)">Select a team member…</option>
+                                @foreach (var e in members)
+                                {
+                                    <option value="@e.Id" selected="@(Model.AssigneeId == e.Id)">@e.FullName</option>
+                                }
+                            </select>
+                            <div class="form-text">Assignee must be a member of the project.</div>
+                            <span asp-validation-for="AssigneeId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Comment" class="form-label"></label>
+                            <textarea asp-for="Comment" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Comment" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Save Changes
+                        </button>
+                        <a asp-action="Detail" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

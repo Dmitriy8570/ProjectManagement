@@ -263,6 +263,18 @@ body.pm-layout {
 }
 .pm-page-header h2 i { color: var(--txt-muted); font-size: 1.25rem; }
 
+/* ── Project context banner (task list scoped to a project) ──────────── */
+.pm-project-context { border-left-width: 4px; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); }
+.pm-project-context-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.5rem; height: 2.5rem; border-radius: 8px;
+    background: #dbeafe; color: #1e40af; font-size: 1.25rem;
+    flex-shrink: 0;
+}
+.pm-project-context h4 { font-size: 1.125rem; font-weight: 700; color: var(--txt); margin: 0; }
+.pm-project-context h4 a { color: inherit; text-decoration: none; }
+.pm-project-context h4 a:hover { color: var(--accent); }
+
 /* ── Table overrides ─────────────────────────────────────────────────── */
 .table { color: var(--txt); margin-bottom: 0; }
 

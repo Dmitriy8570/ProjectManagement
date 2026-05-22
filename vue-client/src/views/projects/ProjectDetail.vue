@@ -121,6 +121,9 @@ onMounted(load)
     <div class="pm-page-header">
       <h2>{{ project.name }}</h2>
       <div class="d-flex gap-2">
+        <RouterLink :to="`/projects/${id}/tasks`" class="btn btn-outline-primary">
+          <i class="bi bi-list-check me-1"></i>Tasks
+        </RouterLink>
         <RouterLink :to="`/projects/${id}/edit`" class="btn btn-outline-secondary">
           <i class="bi bi-pencil me-1"></i>Edit
         </RouterLink>

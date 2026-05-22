@@ -26,6 +26,11 @@
             <i class="bi bi-folder2"></i>Projects
         </a>
 
+        <a class="pm-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Tasks" ? "pm-nav-active" : "")"
+           asp-controller="Tasks" asp-action="Index">
+            <i class="bi bi-list-check"></i>Tasks
+        </a>
+
         <a class="pm-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employees" ? "pm-nav-active" : "")"
            asp-controller="Employees" asp-action="Index">
             <i class="bi bi-people"></i>Employees
@@ -36,6 +41,10 @@
 
         <a class="pm-nav-link" asp-controller="Projects" asp-action="Create">
             <i class="bi bi-plus-square"></i>New Project
+        </a>
+
+        <a class="pm-nav-link" asp-controller="Tasks" asp-action="Create">
+            <i class="bi bi-plus-circle"></i>New Task
         </a>
 
         <a class="pm-nav-link" asp-controller="Employees" asp-action="Create">

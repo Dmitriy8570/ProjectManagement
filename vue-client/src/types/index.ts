@@ -85,3 +85,49 @@ export interface EmployeeProjectsDto {
   managedProjects: ProjectDto[]
   participantProjects: ProjectDto[]
 }
+
+export type ProjectTaskStatus = 'ToDo' | 'InProgress' | 'Done'
+
+export interface ProjectTaskDto {
+  id: number
+  name: string
+  comment: string
+  status: ProjectTaskStatus
+  priority: number
+  projectId: number
+  projectName: string
+  author: EmployeeDto
+  assignee: EmployeeDto
+}
+
+export interface ProjectTaskListFilter {
+  projectId?: number | null
+  assigneeId?: number | null
+  authorId?: number | null
+  status?: ProjectTaskStatus | null
+  minPriority?: number | null
+  maxPriority?: number | null
+  nameSearch?: string
+  sortBy?: 'Name' | 'Priority' | 'Status'
+  descending?: boolean
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateProjectTaskRequest {
+  name: string
+  comment?: string
+  projectId: number
+  authorId: number
+  assigneeId: number
+  priority: number
+  status?: ProjectTaskStatus
+}
+
+export interface EditProjectTaskRequest {
+  name?: string
+  comment?: string
+  priority?: number
+  status?: ProjectTaskStatus
+  assigneeId?: number
+}
