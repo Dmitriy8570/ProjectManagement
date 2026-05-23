@@ -27,12 +27,8 @@ public class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocu
 
         builder.HasIndex(d => d.ProjectId);
 
-        // Bind both sides explicitly: Project.Documents is a read-only
-        // collection backed by a private field, and EF needs both endpoints
-        // configured here to avoid inferring a second shadow relationship.
-        // Cascade: deleting a project removes its document records.
-        builder.HasOne(d => d.Project)
-            .WithMany(p => p.Documents)
+        builder.HasOne<BusinessLogic.Projects.Project>()
+            .WithMany()
             .HasForeignKey(d => d.ProjectId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);

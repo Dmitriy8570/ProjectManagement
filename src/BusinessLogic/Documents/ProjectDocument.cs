@@ -7,7 +7,6 @@ public class ProjectDocument
 {
     public int Id { get; private set; }
     public int ProjectId { get; private set; }
-    public Project Project { get; private set; } = default!;
 
     /// <summary>Original file name supplied by the uploader.</summary>
     public string FileName { get; private set; } = default!;
@@ -31,7 +30,7 @@ public class ProjectDocument
         ProjectId   = DomainGuard.NonNegative(projectId, nameof(projectId));
         FileName    = DomainGuard.NotBlank(fileName, nameof(fileName), 255);
         StoredName  = DomainGuard.NotBlank(storedName, nameof(storedName), 150);
-        ContentType = DomainGuard.NotBlank(ContentType, nameof(ContentType), 100);
+        ContentType = DomainGuard.NotBlank(contentType, nameof(contentType), 100);
         SizeBytes   = DomainGuard.NonNegative(sizeBytes, nameof(sizeBytes));
     }
 }
