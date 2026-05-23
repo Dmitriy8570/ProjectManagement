@@ -12,7 +12,7 @@ public class ProjectRepositoryTests : DatabaseTestBase
 
     private async Task<Employee> AddPmAsync(string tag = "PM")
     {
-        var pm = new Employee(tag, tag, tag, $"{tag.ToLower()}@x.com");
+        var pm = new Employee(tag, tag, tag);
         Db.Employees.Add(pm);
         await Db.SaveChangesAsync(Ct);
         return pm;
@@ -294,7 +294,7 @@ public class ProjectRepositoryTests : DatabaseTestBase
     public async Task GetProjectsAsync_IncludesEmployees()
     {
         var pm = await AddPmAsync();
-        var emp = new Employee("Bob", "B", "B", "bob@x.com");
+        var emp = new Employee("Bob", "B", "B");
         Db.Employees.Add(emp);
         await Db.SaveChangesAsync(Ct);
 
@@ -317,7 +317,7 @@ public class ProjectRepositoryTests : DatabaseTestBase
     public async Task GetProjectByIdAsync_IncludesProjectManagerAndEmployees()
     {
         var pm = await AddPmAsync("Carol");
-        var emp = new Employee("Dave", "D", "D", "dave@x.com");
+        var emp = new Employee("Dave", "D", "D");
         Db.Employees.Add(emp);
         await Db.SaveChangesAsync(Ct);
 

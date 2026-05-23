@@ -1,10 +1,13 @@
 using BusinessLogic.Documents;
 using BusinessLogic.Employees;
+using BusinessLogic.Identity;
 using BusinessLogic.Projects;
 using BusinessLogic.Tasks;
 using DataAccess;
+using DataAccess.Identity;
 using DataAccess.Infrastructure;
 using DataAccess.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -49,6 +52,23 @@ public static class DependencyInjection
                         "Use 'SqlServer' (default) or 'Sqlite'.");
             }
         });
+
+        // Identity core — enough to make UserManager/SignInManager resolvable
+        // for IUserAccountService and AccountController. The presentation
+        // layer wires the actual authentication scheme (cookies for MVC,
+        // bearer for the SPA API) on top.
+        builder.Services
+            .AddIdentityCore<ApplicationUser>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+            })
+            .AddRoles<IdentityRole>()
+            .AddRoleManager<RoleManager<IdentityRole>>()
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddSignInManager()
+            .AddClaimsPrincipalFactory<EmployeeClaimsPrincipalFactory>();
+
+        builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 
         // Repositories are scoped to match the DbContext lifetime so a single
         // unit of work spans the whole request.

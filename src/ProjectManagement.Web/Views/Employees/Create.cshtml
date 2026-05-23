@@ -1,6 +1,26 @@
-@model EmployeeFormViewModel
+@using BusinessLogic.Identity
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.Options
+@inject IOptions<IdentityOptions> IdentityOptionsAccessor
+@model ProjectManagement.Web.ViewModels.Employees.CreateEmployeeViewModel
 @{
     ViewData["Title"] = "Add Employee";
+    var roles = new (string Value, string Label)[]
+    {
+        (Roles.Director,       "Руководитель"),
+        (Roles.ProjectManager, "Менеджер проекта"),
+        (Roles.Employee,       "Сотрудник")
+    };
+
+    // Render the Identity password policy directly from configuration so the
+    // hints stay in sync if the rules are ever tweaked in Program.cs / DI.
+    var pwd = IdentityOptionsAccessor.Value.Password;
+    var passwordRules = new List<string> { $"at least {pwd.RequiredLength} characters" };
+    if (pwd.RequiredUniqueChars > 1)        passwordRules.Add($"at least {pwd.RequiredUniqueChars} unique characters");
+    if (pwd.RequireUppercase)               passwordRules.Add("an uppercase letter (A-Z)");
+    if (pwd.RequireLowercase)               passwordRules.Add("a lowercase letter (a-z)");
+    if (pwd.RequireDigit)                   passwordRules.Add("a digit (0-9)");
+    if (pwd.RequireNonAlphanumeric)         passwordRules.Add("a special character (e.g. !@#$%)");
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
@@ -50,6 +70,30 @@
                         <label asp-for="Email" class="form-label"></label>
                         <input asp-for="Email" type="email" class="form-control" />
                         <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" />
+                        <div class="form-text">
+                            Password must contain:
+                            <ul class="mb-0 ps-3">
+                                @foreach (var rule in passwordRules)
+                                {
+                                    <li>@rule</li>
+                                }
+                            </ul>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Role" class="form-label"></label>
+                        <select asp-for="Role" class="form-select">
+                            @foreach (var (value, label) in roles)
+                            {
+                                <option value="@value">@label</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Role" class="text-danger small"></span>
                     </div>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">

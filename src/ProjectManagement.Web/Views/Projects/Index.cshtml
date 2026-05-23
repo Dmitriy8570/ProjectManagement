@@ -1,14 +1,23 @@
+@using BusinessLogic.Identity
+@inject ICurrentUserService CurrentUser
 @model ProjectListViewModel
 @{
     ViewData["Title"] = "Projects";
+
+    var isDirector = User.IsInRole(Roles.Director);
+    var isPm       = User.IsInRole(Roles.ProjectManager);
+    var myEmpId    = CurrentUser.EmployeeId;
 }
 
 <!-- ── Page header ──────────────────────────────────────────────────── -->
 <div class="pm-page-header">
     <h2><i class="bi bi-folder2-open"></i>Projects</h2>
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>New Project
-    </a>
+    @if (isDirector)
+    {
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>New Project
+        </a>
+    }
 </div>
 
 <!-- ── Search + filters toolbar ─────────────────────────────────────── -->
@@ -135,7 +144,14 @@
 {
     <div class="text-center py-5 text-muted">
         <i class="bi bi-inbox" style="font-size:3rem;"></i>
-        <p class="mt-2">No projects found. <a asp-action="Create">Create one?</a></p>
+        @if (isDirector)
+        {
+            <p class="mt-2">No projects found. <a asp-action="Create">Create one?</a></p>
+        }
+        else
+        {
+            <p class="mt-2">You have no projects yet.</p>
+        }
     </div>
 }
 else
@@ -186,16 +202,26 @@ else
                                 </span>
                             </td>
                             <td class="text-end" style="white-space:nowrap;">
-                                <a asp-action="Edit" asp-route-id="@p.Id"
-                                   class="btn btn-sm btn-outline-secondary me-1" title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline"
-                                      onsubmit="return confirm('Delete project «@p.Name»? This cannot be undone.')">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
+                                @{
+                                    var canEditRow   = isDirector || (isPm && p.ProjectManager.Id == myEmpId);
+                                    var canDeleteRow = isDirector;
+                                }
+                                @if (canEditRow)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@p.Id"
+                                       class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                }
+                                @if (canDeleteRow)
+                                {
+                                    <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline"
+                                          onsubmit="return confirm('Delete project «@p.Name»? This cannot be undone.')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                }
                             </td>
                         </tr>
                     }

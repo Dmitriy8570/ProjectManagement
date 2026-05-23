@@ -23,7 +23,6 @@ public class Project
     private readonly List<Employee> _employees = new();
     public IReadOnlyCollection<Employee> Employees => _employees;
 
-
     // Required by EF Core to rehydrate the entity from the database.
     private Project() { }
 

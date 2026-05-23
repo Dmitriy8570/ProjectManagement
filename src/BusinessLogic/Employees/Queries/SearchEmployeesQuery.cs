@@ -12,6 +12,13 @@ public record SearchEmployeesQuery : IRequest<IReadOnlyList<EmployeeDto>>
 {
     public string? Term { get; init; }
     public int Limit { get; init; } = 20;
+
+    /// <summary>
+    /// Optional whitelist of Identity roles — when set, only employees whose
+    /// linked account is in at least one of these roles are returned. Used
+    /// by the PM picker on the project wizard to hide plain Сотрудник users.
+    /// </summary>
+    public IReadOnlyList<string>? Roles { get; init; }
 }
 
 public class SearchEmployeesQueryHandler
@@ -26,12 +33,11 @@ public class SearchEmployeesQueryHandler
         _employeeRepository = employeeRepository;
     }
 
-    public async Task<IReadOnlyList<EmployeeDto>> Handle(SearchEmployeesQuery request, CancellationToken ct)
+    public Task<IReadOnlyList<EmployeeDto>> Handle(SearchEmployeesQuery request, CancellationToken ct)
     {
         // Clamp to a safe range; callers can ask for less but never more than MaxLimit.
         var limit = Math.Clamp(request.Limit, 1, MaxLimit);
 
-        var employees = await _employeeRepository.SearchEmployeesAsync(request.Term, limit, ct);
-        return employees.Select(e => e.ToDto()).ToArray();
+        return _employeeRepository.SearchEmployeesAsync(request.Term, limit, request.Roles, ct);
     }
 }

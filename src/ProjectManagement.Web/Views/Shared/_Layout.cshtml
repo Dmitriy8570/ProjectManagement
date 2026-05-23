@@ -1,3 +1,5 @@
+@using BusinessLogic.Identity
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +12,12 @@
 </head>
 <body class="pm-layout">
 
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isDirector = User.IsInRole(Roles.Director);
+    var isPm       = User.IsInRole(Roles.ProjectManager);
+}
+
 <div class="pm-sidebar-overlay" id="sidebarOverlay"></div>
 
 <aside class="pm-sidebar" id="sidebar">
@@ -18,14 +26,15 @@
         <span>PM System</span>
     </a>
 
-    <nav class="pm-sidebar-nav">
-        <div class="pm-nav-section-label">Workspace</div>
+    @if (isAuthenticated)
+    {
+        <nav class="pm-sidebar-nav">
+            <div class="pm-nav-section-label">Workspace</div>
 
-        <a class="pm-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "pm-nav-active" : "")"
-           asp-controller="Projects" asp-action="Index">
-            <i class="bi bi-folder2"></i>Projects
-        </a>
-
+            <a class="pm-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "pm-nav-active" : "")"
+               asp-controller="Projects" asp-action="Index">
+                <i class="bi bi-folder2"></i>Projects
+            </a>
         <a class="pm-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Tasks" ? "pm-nav-active" : "")"
            asp-controller="Tasks" asp-action="Index">
             <i class="bi bi-list-check"></i>Tasks
@@ -35,23 +44,37 @@
            asp-controller="Employees" asp-action="Index">
             <i class="bi bi-people"></i>Employees
         </a>
+            @if (isDirector)
+            {
+                <a class="pm-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employees" ? "pm-nav-active" : "")"
+                   asp-controller="Employees" asp-action="Index">
+                    <i class="bi bi-people"></i>Employees
+                </a>
+            }
 
-        <div class="pm-nav-divider"></div>
-        <div class="pm-nav-section-label">Quick Actions</div>
+            @if (isDirector || isPm)
+            {
+                <div class="pm-nav-divider"></div>
+                <div class="pm-nav-section-label">Quick Actions</div>
+            }
 
-        <a class="pm-nav-link" asp-controller="Projects" asp-action="Create">
-            <i class="bi bi-plus-square"></i>New Project
-        </a>
-
-        <a class="pm-nav-link" asp-controller="Tasks" asp-action="Create">
-            <i class="bi bi-plus-circle"></i>New Task
-        </a>
-
-        <a class="pm-nav-link" asp-controller="Employees" asp-action="Create">
-            <i class="bi bi-person-plus"></i>Add Employee
-        </a>
-    </nav>
-
+            @if (isDirector)
+            {
+                <a class="pm-nav-link" asp-controller="Projects" asp-action="Create">
+                    <i class="bi bi-plus-square"></i>New Project
+                </a>
+                <a class="pm-nav-link" asp-controller="Employees" asp-action="Create">
+                    <i class="bi bi-person-plus"></i>Add Employee
+                </a>
+            }
+            @if (isDirector || isPm)
+            {
+    <a class="pm-nav-link" asp-controller="Tasks" asp-action="Create">
+        <i class="bi bi-plus-circle"></i>New Task
+    </a>
+            }
+        </nav>
+    }
 </aside>
 
 <div class="pm-main">
@@ -63,6 +86,27 @@
         <span class="pm-topbar-title">
             @(ViewData["Title"]?.ToString() ?? "Dashboard")
         </span>
+
+        <div class="ms-auto d-flex align-items-center gap-2">
+            @if (isAuthenticated)
+            {
+                <span class="text-muted small">
+                    <i class="bi bi-person-circle me-1"></i>@User.Identity!.Name
+                </span>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-box-arrow-right me-1"></i>Sign out
+                    </button>
+                </form>
+            }
+            else
+            {
+                <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Sign in
+                </a>
+            }
+        </div>
     </header>
 
     <main class="pm-content">

@@ -8,9 +8,27 @@ public interface IEmployeeRepository
     /// is null or whitespace, the repository returns the first
     /// <paramref name="limit"/> employees ordered by last/first name — this is
     /// what feeds the wizard's AJAX dropdown on initial open.
+    ///
+    /// When <paramref name="roles"/> is non-null/non-empty, only employees
+    /// whose linked Identity account belongs to at least one of the listed
+    /// roles are returned. The Email field on the returned DTOs is sourced
+    /// from the linked Identity user account via a join.
     /// </summary>
-    Task<IReadOnlyList<Employee>> SearchEmployeesAsync(string? term, int limit, CancellationToken ct);
+    Task<IReadOnlyList<EmployeeDto>> SearchEmployeesAsync(
+        string? term, int limit, IReadOnlyList<string>? roles, CancellationToken ct);
 
+    /// <summary>
+    /// Single-employee read for the detail page. Returns <c>null</c> when no
+    /// employee exists with the given id. The DTO's Email comes from the
+    /// linked Identity user account via a join.
+    /// </summary>
+    Task<EmployeeDto?> GetEmployeeDtoByIdAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// Returns the tracked entity for write-side flows (edit/delete). The
+    /// entity itself does not carry Email — use <see cref="IBusinessLogic.Identity.IUserAccountService"/>
+    /// when the email is needed alongside.
+    /// </summary>
     Task<Employee?> GetEmployeeByIdAsync(int id, CancellationToken ct);
 
     /// <summary>
@@ -30,13 +48,6 @@ public interface IEmployeeRepository
     /// follow-up <see cref="SaveAsync"/> call is not required.
     /// </summary>
     Task<bool> DeleteEmployeeAsync(int id, CancellationToken ct);
-
-    /// <summary>
-    /// Returns true if any employee already uses <paramref name="email"/>
-    /// (case-insensitive), optionally excluding a known id (so that editing
-    /// an employee without changing their email does not flag a conflict).
-    /// </summary>
-    Task<bool> EmailExistsAsync(string email, int? excludingId, CancellationToken ct);
 
     /// <summary>
     /// Returns true if the employee is the project manager of at least one

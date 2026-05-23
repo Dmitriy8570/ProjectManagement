@@ -1,5 +1,6 @@
 using BusinessLogic.Common;
 using BusinessLogic.Employees;
+using BusinessLogic.Identity;
 using BusinessLogic.Projects;
 using BusinessLogic.Projects.Commands;
 using NSubstitute;
@@ -10,6 +11,7 @@ public class EditProjectCommandHandlerTests
 {
     private readonly IProjectRepository _projectRepo;
     private readonly IEmployeeRepository _employeeRepo;
+    private readonly IUserAccountService _userAccountService;
     private readonly EditProjectCommandHandler _handler;
 
     private static readonly DateTime DefaultStart = new(2024, 1, 1);
@@ -19,12 +21,13 @@ public class EditProjectCommandHandlerTests
     {
         _projectRepo = Substitute.For<IProjectRepository>();
         _employeeRepo = Substitute.For<IEmployeeRepository>();
-        _handler = new EditProjectCommandHandler(_projectRepo, _employeeRepo);
+        _userAccountService = Substitute.For<IUserAccountService>();
+        _handler = new EditProjectCommandHandler(_projectRepo, _employeeRepo, _userAccountService);
     }
 
     private static Employee CreateEmployee(int id, string email = "person@example.com")
     {
-        var employee = new Employee("First", "Last", "Patronymic", email);
+        var employee = new Employee("First", "Last", "Patronymic");
         typeof(Employee).GetProperty(nameof(Employee.Id))!.SetValue(employee, id);
         return employee;
     }

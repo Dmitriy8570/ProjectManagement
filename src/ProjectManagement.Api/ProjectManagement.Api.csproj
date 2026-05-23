@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
     <!-- Required so EF Core CLI tools can construct the DbContext from this
          project at design time (migrations, scaffolding). Version is pinned
          to match the other EF Core packages. -->

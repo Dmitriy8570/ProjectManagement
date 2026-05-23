@@ -1,8 +1,18 @@
 @model BusinessLogic.Projects.ProjectDto
 @using BusinessLogic.Documents
+@using BusinessLogic.Identity
+@inject ICurrentUserService CurrentUser
 @{
     ViewData["Title"] = Model.Name;
     var documents = ViewBag.Documents as IReadOnlyList<ProjectDocumentDto> ?? [];
+
+    var isDirector = User.IsInRole(Roles.Director);
+    var myEmpId    = CurrentUser.EmployeeId;
+    var isOwnerPm  = !isDirector
+                     && User.IsInRole(Roles.ProjectManager)
+                     && Model.ProjectManager.Id == myEmpId;
+    var canManage  = isDirector || isOwnerPm;
+    var canDelete  = isDirector;
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
@@ -14,20 +24,26 @@
 
 <div class="pm-page-header">
     <h2>@Model.Name</h2>
-    <div class="d-flex gap-2">
-        <a asp-controller="Tasks" asp-action="Index" asp-route-projectId="@Model.Id" class="btn btn-outline-primary">
-            <i class="bi bi-list-check me-1"></i>Tasks
-        </a>
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
-            <i class="bi bi-pencil me-1"></i>Edit
-        </a>
-        <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
-              onsubmit="return confirm('Delete project «@Model.Name»? This cannot be undone.')">
-            <button type="submit" class="btn btn-outline-danger">
-                <i class="bi bi-trash me-1"></i>Delete
-            </button>
-        </form>
-    </div>
+    @if (canManage || canDelete)
+    {
+        <div class="d-flex gap-2">
+            @if (canManage)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </a>
+            }
+            @if (canDelete)
+            {
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+                      onsubmit="return confirm('Delete project «@Model.Name»? This cannot be undone.')">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>Delete
+                    </button>
+                </form>
+            }
+        </div>
+    }
 </div>
 
 <div class="row g-4">
@@ -84,14 +100,17 @@
                                    asp-route-id="@emp.Id" class="text-decoration-none">
                                     <i class="bi bi-person me-2 text-muted"></i>@emp.FullName
                                 </a>
-                                <form asp-action="Unassign" asp-route-id="@Model.Id" method="post">
-                                    <input type="hidden" name="employeeId" value="@emp.Id" />
-                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0"
-                                            title="Remove from project"
-                                            onclick="return confirm('Remove @emp.FullName from this project?')">
-                                        <i class="bi bi-x-circle"></i>
-                                    </button>
-                                </form>
+                                @if (canManage)
+                                {
+                                    <form asp-action="Unassign" asp-route-id="@Model.Id" method="post">
+                                        <input type="hidden" name="employeeId" value="@emp.Id" />
+                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0"
+                                                title="Remove from project"
+                                                onclick="return confirm('Remove @emp.FullName from this project?')">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                }
                             </li>
                         }
                     </ul>
@@ -101,24 +120,27 @@
                     <p class="text-muted small mb-3">No team members yet.</p>
                 }
 
-                <!-- Add employee -->
-                <form asp-action="Assign" asp-route-id="@Model.Id" method="post" class="mt-2">
-                    <label class="form-label small text-muted">Add Employee</label>
-                    <div class="autocomplete-wrapper">
-                        <input type="text" id="assign-search" class="form-control form-control-sm"
-                               placeholder="Search by name…" autocomplete="off" />
-                        <div id="assign-dropdown" class="autocomplete-dropdown"></div>
-                    </div>
-                    <input type="hidden" name="employeeId" id="assign-employee-id" value="0" />
-                    <div id="assign-selected" class="mt-2" style="display:none;">
-                        <span class="badge bg-info text-dark" id="assign-selected-name"></span>
-                        <button type="button" class="btn btn-link btn-sm text-muted p-0 ms-1"
-                                id="assign-clear">remove</button>
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-primary mt-2" id="assign-btn" disabled>
-                        <i class="bi bi-person-plus me-1"></i>Assign
-                    </button>
-                </form>
+                @if (canManage)
+                {
+                    <!-- Add employee -->
+                    <form asp-action="Assign" asp-route-id="@Model.Id" method="post" class="mt-2">
+                        <label class="form-label small text-muted">Add Employee</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" id="assign-search" class="form-control form-control-sm"
+                                   placeholder="Search by name…" autocomplete="off" />
+                            <div id="assign-dropdown" class="autocomplete-dropdown"></div>
+                        </div>
+                        <input type="hidden" name="employeeId" id="assign-employee-id" value="0" />
+                        <div id="assign-selected" class="mt-2" style="display:none;">
+                            <span class="badge bg-info text-dark" id="assign-selected-name"></span>
+                            <button type="button" class="btn btn-link btn-sm text-muted p-0 ms-1"
+                                    id="assign-clear">remove</button>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary mt-2" id="assign-btn" disabled>
+                            <i class="bi bi-person-plus me-1"></i>Assign
+                        </button>
+                    </form>
+                }
             </div>
         </div>
     </div>
@@ -147,15 +169,18 @@
                                 (@(Math.Round(doc.SizeBytes / 1024.0, 1)) KB &middot
                             </span>
                         </div>
-                        <form asp-action="DeleteDocument"
-                              asp-route-id="@Model.Id"
-                              asp-route-docId="@doc.Id"
-                              method="post">
-                            <button type="submit" class="btn btn-sm btn-link text-danger p-0"
-                                    onclick="return confirm('Delete «@doc.FileName»?')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
+                        @if (canManage)
+                        {
+                            <form asp-action="DeleteDocument"
+                                  asp-route-id="@Model.Id"
+                                  asp-route-docId="@doc.Id"
+                                  method="post">
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0"
+                                        onclick="return confirm('Delete «@doc.FileName»?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        }
                     </li>
                 }
             </ul>
@@ -165,27 +190,35 @@
             <p class="text-muted small mb-3">No documents uploaded yet.</p>
         }
 
-        <form asp-action="UploadDocument" asp-route-id="@Model.Id"
-              method="post" enctype="multipart/form-data" id="upload-form">
-            <div class="drop-zone" id="doc-drop-zone">
-                <i class="bi bi-cloud-upload"></i>
-                <p class="mb-1">Drag &amp; drop a file here or
-                    <label for="doc-file-input" class="drop-zone-link">browse</label>
-                </p>
-                <p class="small text-muted mb-0">Max 50 MB per file</p>
-                <input type="file" name="files" id="doc-file-input" multiple style="display:none;" />
-            </div>
-            <div id="upload-selected" class="mt-2" style="display:none;">
-                <span class="text-muted small" id="upload-filename"></span>
-                <button type="submit" class="btn btn-sm btn-primary ms-2">
-                    <i class="bi bi-upload me-1"></i>Upload
-                </button>
-            </div>
-        </form>
+        @if (canManage)
+        {
+            <form asp-action="UploadDocument" asp-route-id="@Model.Id"
+                  method="post" enctype="multipart/form-data" id="upload-form">
+                <div class="drop-zone" id="doc-drop-zone">
+                    <i class="bi bi-cloud-upload"></i>
+                    <p class="mb-1">Drag &amp; drop a file here or
+                        <label for="doc-file-input" class="drop-zone-link">browse</label>
+                    </p>
+                    <p class="small text-muted mb-0">Max 50 MB per file</p>
+                    <input type="file" name="files" id="doc-file-input" multiple style="display:none;" />
+                </div>
+                <div id="upload-selected" class="mt-2" style="display:none;">
+                    <span class="text-muted small" id="upload-filename"></span>
+                    <button type="submit" class="btn btn-sm btn-primary ms-2">
+                        <i class="bi bi-upload me-1"></i>Upload
+                    </button>
+                </div>
+            </form>
+        }
     </div>
 </div>
 
 @section Scripts {
+    @* Autocomplete + drop-zone scripts only make sense when the corresponding
+       forms are rendered. Wrapping them in canManage keeps non-manager pages
+       from crashing on null DOM lookups. *@
+    @if (canManage)
+    {
     <script src="~/js/employee-autocomplete.js" asp-append-version="true"></script>
     <script>
         initAssignAutocomplete({
@@ -230,4 +263,5 @@
             input.addEventListener('change', function () { showFiles(input.files); });
         })();
     </script>
+    }
 }

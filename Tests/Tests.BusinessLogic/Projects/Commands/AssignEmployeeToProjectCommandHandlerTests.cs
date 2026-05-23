@@ -24,7 +24,7 @@ public class AssignEmployeeToProjectCommandHandlerTests
 
     private static Employee CreateEmployee(int id, string email = "person@example.com")
     {
-        var employee = new Employee("First", "Last", "Patronymic", email);
+        var employee = new Employee("First", "Last", "Patronymic");
         typeof(Employee).GetProperty(nameof(Employee.Id))!.SetValue(employee, id);
         return employee;
     }

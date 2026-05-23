@@ -1,17 +1,31 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { projectsApi } from '@/api/projects'
 import { employeesApi } from '@/api/employees'
 import { documentsApi } from '@/api/documents'
 import { useNotification } from '@/stores/notification'
-import type { ProjectDto, EmployeeDto, ProjectDocumentDto } from '@/types'
+import { useAuth } from '@/stores/auth'
+import { Roles, type ProjectDto, type EmployeeDto, type ProjectDocumentDto } from '@/types'
 import FileDropZone from '@/components/FileDropZone.vue'
 
 const route  = useRoute()
 const router = useRouter()
 const notif  = useNotification()
+const auth   = useAuth()
 const id     = Number(route.params.id)
+
+const isDirector = computed(() => auth.hasRole(Roles.Director))
+// "Owner" rule: a PM-role user who is the PM of THIS project. PM rights kick
+// in here, not on every project — that's why the comparison is to
+// auth.employeeId, not just "has the PM role".
+const isOwnerPm = computed(() =>
+  !isDirector.value
+  && auth.hasRole(Roles.ProjectManager)
+  && project.value?.projectManager.id === auth.employeeId
+)
+const canManage = computed(() => isDirector.value || isOwnerPm.value)
+const canDelete = computed(() => isDirector.value)
 
 const project   = ref<ProjectDto | null>(null)
 const documents = ref<ProjectDocumentDto[]>([])
@@ -120,14 +134,17 @@ onMounted(load)
 
     <div class="pm-page-header">
       <h2>{{ project.name }}</h2>
-      <div class="d-flex gap-2">
-        <RouterLink :to="`/projects/${id}/tasks`" class="btn btn-outline-primary">
-          <i class="bi bi-list-check me-1"></i>Tasks
-        </RouterLink>
-        <RouterLink :to="`/projects/${id}/edit`" class="btn btn-outline-secondary">
+      <div v-if="canManage || canDelete" class="d-flex gap-2">
+        <RouterLink
+          v-if="canManage"
+          :to="`/projects/${id}/edit`"
+          class="btn btn-outline-secondary">
           <i class="bi bi-pencil me-1"></i>Edit
         </RouterLink>
-        <button class="btn btn-outline-danger" @click="del">
+        <button
+          v-if="canDelete"
+          class="btn btn-outline-danger"
+          @click="del">
           <i class="bi bi-trash me-1"></i>Delete
         </button>
       </div>
@@ -175,7 +192,10 @@ onMounted(load)
                 <RouterLink :to="`/employees/${emp.id}`" class="text-decoration-none">
                   <i class="bi bi-person me-2 text-muted"></i>{{ emp.fullName }}
                 </RouterLink>
-                <button class="btn btn-sm btn-link text-danger p-0" @click="unassign(emp.id)">
+                <button
+                  v-if="canManage"
+                  class="btn btn-sm btn-link text-danger p-0"
+                  @click="unassign(emp.id)">
                   <i class="bi bi-x-circle"></i>
                 </button>
               </li>
@@ -183,7 +203,7 @@ onMounted(load)
             <p v-else class="text-muted small mb-3">No team members yet.</p>
 
             <!-- Assign -->
-            <div>
+            <div v-if="canManage">
               <label class="form-label small text-muted">Add Employee</label>
               <div class="autocomplete-wrapper">
                 <input
@@ -241,21 +261,26 @@ onMounted(load)
                 ({{ fmtKb(doc.sizeBytes) }} KB · {{ fmtUploadedAt(doc.uploadedAt) }})
               </span>
             </div>
-            <button class="btn btn-sm btn-link text-danger p-0" @click="deleteDoc(doc)">
+            <button
+              v-if="canManage"
+              class="btn btn-sm btn-link text-danger p-0"
+              @click="deleteDoc(doc)">
               <i class="bi bi-trash"></i>
             </button>
           </li>
         </ul>
         <p v-else class="text-muted small mb-3">No documents uploaded yet.</p>
 
-        <FileDropZone @update:files="pendingFiles = $event" />
+        <template v-if="canManage">
+          <FileDropZone @update:files="pendingFiles = $event" />
 
-        <div v-if="pendingFiles.length" class="mt-3">
-          <button class="btn btn-sm btn-primary" :disabled="uploading" @click="uploadDocs">
-            <span v-if="uploading" class="spinner-border spinner-border-sm me-1"></span>
-            <i v-else class="bi bi-upload me-1"></i>Upload {{ pendingFiles.length }} file{{ pendingFiles.length > 1 ? 's' : '' }}
-          </button>
-        </div>
+          <div v-if="pendingFiles.length" class="mt-3">
+            <button class="btn btn-sm btn-primary" :disabled="uploading" @click="uploadDocs">
+              <span v-if="uploading" class="spinner-border spinner-border-sm me-1"></span>
+              <i v-else class="bi bi-upload me-1"></i>Upload {{ pendingFiles.length }} file{{ pendingFiles.length > 1 ? 's' : '' }}
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </template>

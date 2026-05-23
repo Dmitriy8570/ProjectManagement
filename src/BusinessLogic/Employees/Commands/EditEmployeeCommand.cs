@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using BusinessLogic.Common;
+using BusinessLogic.Identity;
 using MediatR;
 
 namespace BusinessLogic.Employees.Commands;
@@ -10,7 +11,6 @@ namespace BusinessLogic.Employees.Commands;
 /// </summary>
 public record EditEmployeeRequest
 {
-
     [MaxLength(100)]
     public string? FirstName { get; init; }
 
@@ -38,10 +38,14 @@ public record EditEmployeeResponse
 public class EditEmployeeCommandHandler : IRequestHandler<EditEmployeeCommand, EditEmployeeResponse>
 {
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IUserAccountService _userAccountService;
 
-    public EditEmployeeCommandHandler(IEmployeeRepository employeeRepository)
+    public EditEmployeeCommandHandler(
+        IEmployeeRepository employeeRepository,
+        IUserAccountService userAccountService)
     {
         _employeeRepository = employeeRepository;
+        _userAccountService = userAccountService;
     }
 
     public async Task<EditEmployeeResponse> Handle(EditEmployeeCommand request, CancellationToken ct)
@@ -49,22 +53,31 @@ public class EditEmployeeCommandHandler : IRequestHandler<EditEmployeeCommand, E
         var employee = await _employeeRepository.GetEmployeeByIdAsync(request.Id, ct)
             ?? throw new EntityNotFoundException(nameof(Employee), request.Id);
 
-        // Pre-check unique email — only when the caller is actually changing it,
-        // and only against other employees. Race window is acceptable here
-        // because the DB unique index is still the ultimate guard.
-        if (request.Data.Email is not null &&
-            !string.Equals(request.Data.Email, employee.Email, StringComparison.OrdinalIgnoreCase) &&
-            await _employeeRepository.EmailExistsAsync(request.Data.Email, excludingId: employee.Id, ct))
+        // Email lives on the Identity account, not the Employee entity, so a
+        // change routes through the account service. Only do the conflict
+        // check + update when the caller actually supplied an email — keeps
+        // partial updates cheap.
+        if (request.Data.Email is not null)
         {
-            throw new DomainValidationException(
-                $"An employee with email '{request.Data.Email}' already exists.");
+            var currentEmail = await _userAccountService.GetEmailByEmployeeIdAsync(employee.Id, ct);
+
+            if (!string.Equals(request.Data.Email, currentEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                if (await _userAccountService.EmailExistsAsync(
+                        request.Data.Email, excludingEmployeeId: employee.Id, ct))
+                {
+                    throw new DomainValidationException(
+                        $"An employee with email '{request.Data.Email}' already exists.");
+                }
+
+                await _userAccountService.UpdateEmailAsync(employee.Id, request.Data.Email, ct);
+            }
         }
 
         employee.Update(
             firstName: request.Data.FirstName,
             lastName: request.Data.LastName,
-            patronymic: request.Data.Patronymic,
-            email: request.Data.Email);
+            patronymic: request.Data.Patronymic);
 
         await _employeeRepository.SaveAsync(ct);
 

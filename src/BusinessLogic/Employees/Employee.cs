@@ -9,7 +9,10 @@ public class Employee
     public string FirstName { get; private set; } = default!;
     public string LastName { get; private set; } = default!;
     public string Patronymic { get; private set; } = default!;
-    public string Email { get; private set; } = default!;
+
+    // Email is owned by the linked Identity user (ApplicationUser.Email) so it
+    // doesn't live on the domain entity — read-side queries project it via a
+    // join, write-side commands change it through IUserAccountService.
 
     // Navigation: projects this employee participates in as a regular member.
     // Project management (where this employee is the PM) is modelled separately
@@ -25,12 +28,11 @@ public class Employee
     // so invariants are enforced.
     private Employee() { }
 
-    public Employee(string firstName, string lastName, string? patronymic, string email)
+    public Employee(string firstName, string lastName, string? patronymic)
     {
         FirstName  = DomainGuard.NotBlank(firstName, nameof(firstName), maxLength: 100);
         LastName   = DomainGuard.NotBlank(lastName, nameof(lastName), maxLength: 100);
         Patronymic = DomainGuard.OptionalText(patronymic, nameof(patronymic), maxLength: 100);
-        Email      = DomainGuard.Email(email, nameof(email), maxLength: 100);
     }
 
     /// <summary>
@@ -41,8 +43,7 @@ public class Employee
     public void Update(
         string? firstName = null,
         string? lastName = null,
-        string? patronymic = null,
-        string? email = null)
+        string? patronymic = null)
     {
         if (firstName is not null)
             FirstName = DomainGuard.NotBlank(firstName, nameof(firstName), maxLength: 100);
@@ -52,8 +53,5 @@ public class Employee
 
         if (patronymic is not null)
             Patronymic = DomainGuard.OptionalText(patronymic, nameof(patronymic), maxLength: 100);
-
-        if (email is not null)
-            Email = DomainGuard.Email(email, nameof(email), maxLength: 100);
     }
 }

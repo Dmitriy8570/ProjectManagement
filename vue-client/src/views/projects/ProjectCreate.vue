@@ -7,7 +7,12 @@ import { documentsApi } from '@/api/documents'
 import { useNotification } from '@/stores/notification'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import FileDropZone from '@/components/FileDropZone.vue'
-import type { EmployeeDto } from '@/types'
+import { Roles, type EmployeeDto } from '@/types'
+
+// Eligible-PM roles: a plain Сотрудник can't lead a project. The server
+// re-validates this in CreateProjectCommandHandler — the filter here is
+// purely UX.
+const PM_ELIGIBLE_ROLES = [Roles.Director, Roles.ProjectManager]
 
 const router = useRouter()
 const notif  = useNotification()
@@ -168,7 +173,7 @@ const stepLabels = ['Basic Info', 'Companies', 'Manager', 'Team', 'Documents']
               <AutocompleteInput
                 v-model="form.projectManagerId"
                 v-model:modelName="form.projectManagerName"
-                :searchFn="(t) => employeesApi.search(t, 10)"
+                :searchFn="(t) => employeesApi.search(t, 10, PM_ELIGIBLE_ROLES)"
                 :invalid="stepErr.includes('manager')"
               />
             </div>

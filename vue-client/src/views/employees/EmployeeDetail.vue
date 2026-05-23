@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { employeesApi } from '@/api/employees'
 import { useNotification } from '@/stores/notification'
-import type { EmployeeDto, EmployeeProjectsDto } from '@/types'
+import { useAuth } from '@/stores/auth'
+import { Roles, type EmployeeDto, type EmployeeProjectsDto } from '@/types'
 
 const route  = useRoute()
 const router = useRouter()
 const notif  = useNotification()
+const auth   = useAuth()
 const id     = Number(route.params.id)
+
+// Detail is open to anyone authenticated (so project pages can link to a
+// person's profile without 403) but writes are Director-only — mirrors
+// EmployeesController on the server.
+const isDirector = computed(() => auth.hasRole(Roles.Director))
 
 const employee = ref<EmployeeDto | null>(null)
 const projects = ref<EmployeeProjectsDto>({ managedProjects: [], participantProjects: [] })
@@ -45,14 +52,16 @@ onMounted(load)
   <template v-else-if="employee">
     <nav aria-label="breadcrumb" class="mb-3">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><RouterLink to="/employees">Employees</RouterLink></li>
+        <li v-if="isDirector" class="breadcrumb-item">
+          <RouterLink to="/employees">Employees</RouterLink>
+        </li>
         <li class="breadcrumb-item active">{{ employee.fullName }}</li>
       </ol>
     </nav>
 
     <div class="pm-page-header">
       <h2>{{ employee.fullName }}</h2>
-      <div class="d-flex gap-2">
+      <div v-if="isDirector" class="d-flex gap-2">
         <RouterLink :to="`/employees/${id}/edit`" class="btn btn-outline-secondary">
           <i class="bi bi-pencil me-1"></i>Edit
         </RouterLink>

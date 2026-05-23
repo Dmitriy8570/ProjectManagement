@@ -1,13 +1,23 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { projectsApi } from '@/api/projects'
-import { employeesApi } from '@/api/employees'
 import { useNotification } from '@/stores/notification'
-import type { ProjectDto, EmployeeDto } from '@/types'
+import { useAuth } from '@/stores/auth'
+import { Roles, type ProjectDto } from '@/types'
 
 const router = useRouter()
 const notif  = useNotification()
+const auth   = useAuth()
+
+// Hide everything that requires write rights this user doesn't have. The API
+// re-enforces the same rules, so even a hand-crafted request can't slip
+// past — these are pure UX trims.
+const isDirector = computed(() => auth.hasRole(Roles.Director))
+const isPm       = computed(() => auth.hasRole(Roles.ProjectManager))
+function canEditRow(p: ProjectDto) {
+  return isDirector.value || (isPm.value && p.projectManager.id === auth.employeeId)
+}
 
 const projects   = ref<ProjectDto[]>([])
 const total      = ref(0)
@@ -166,7 +176,7 @@ onMounted(load)
       <button class="btn btn-outline-secondary" @click="filterOpen = true">
         <i class="bi bi-sliders me-1"></i>Filters
       </button>
-      <RouterLink to="/projects/create" class="btn btn-primary">
+      <RouterLink v-if="isDirector" to="/projects/create" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i>New Project
       </RouterLink>
     </div>
@@ -241,10 +251,16 @@ onMounted(load)
               <td class="small text-muted">{{ fmtDate(p.startDate) }} — {{ fmtDate(p.endDate) }}</td>
               <td><span class="badge bg-secondary">{{ p.priority }}</span></td>
               <td class="text-end">
-                <RouterLink :to="`/projects/${p.id}/edit`" class="btn btn-sm btn-outline-secondary me-1">
+                <RouterLink
+                  v-if="canEditRow(p)"
+                  :to="`/projects/${p.id}/edit`"
+                  class="btn btn-sm btn-outline-secondary me-1">
                   <i class="bi bi-pencil"></i>
                 </RouterLink>
-                <button class="btn btn-sm btn-outline-danger" @click="deleteProject(p)">
+                <button
+                  v-if="isDirector"
+                  class="btn btn-sm btn-outline-danger"
+                  @click="deleteProject(p)">
                   <i class="bi bi-trash"></i>
                 </button>
               </td>

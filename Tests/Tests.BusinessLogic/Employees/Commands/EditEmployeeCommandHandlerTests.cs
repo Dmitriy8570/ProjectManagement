@@ -1,6 +1,7 @@
 using BusinessLogic.Common;
 using BusinessLogic.Employees;
 using BusinessLogic.Employees.Commands;
+using BusinessLogic.Identity;
 using NSubstitute;
 
 namespace Tests.BusinessLogic.Employees.Commands;
@@ -8,22 +9,23 @@ namespace Tests.BusinessLogic.Employees.Commands;
 public class EditEmployeeCommandHandlerTests
 {
     private readonly IEmployeeRepository _repository;
+    private readonly IUserAccountService _accounts;
     private readonly EditEmployeeCommandHandler _handler;
 
     public EditEmployeeCommandHandlerTests()
     {
         _repository = Substitute.For<IEmployeeRepository>();
-        _handler = new EditEmployeeCommandHandler(_repository);
+        _accounts = Substitute.For<IUserAccountService>();
+        _handler = new EditEmployeeCommandHandler(_repository, _accounts);
     }
 
     private static Employee CreateEmployee(
         int id = 1,
         string firstName = "John",
         string lastName = "Doe",
-        string patronymic = "Jr",
-        string email = "john@example.com")
+        string patronymic = "Jr")
     {
-        var employee = new Employee(firstName, lastName, patronymic, email);
+        var employee = new Employee(firstName, lastName, patronymic);
         typeof(Employee).GetProperty("Id")!.SetValue(employee, id);
         return employee;
     }
@@ -73,11 +75,12 @@ public class EditEmployeeCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NewUniqueEmail_ChecksDuplicateWithExcludingId()
+    public async Task Handle_NewUniqueEmail_RoutesUpdateThroughAccountService()
     {
-        var employee = CreateEmployee(id: 5, email: "old@example.com");
+        var employee = CreateEmployee(id: 5);
         _repository.GetEmployeeByIdAsync(5, Arg.Any<CancellationToken>()).Returns(employee);
-        _repository.EmailExistsAsync("new@example.com", 5, Arg.Any<CancellationToken>()).Returns(false);
+        _accounts.GetEmailByEmployeeIdAsync(5, Arg.Any<CancellationToken>()).Returns("old@example.com");
+        _accounts.EmailExistsAsync("new@example.com", 5, Arg.Any<CancellationToken>()).Returns(false);
         var command = new EditEmployeeCommand
         {
             Id = 5,
@@ -87,15 +90,17 @@ public class EditEmployeeCommandHandlerTests
         var response = await _handler.Handle(command, CancellationToken.None);
 
         Assert.Equal(5, response.Id);
-        await _repository.Received(1).EmailExistsAsync("new@example.com", 5, Arg.Any<CancellationToken>());
+        await _accounts.Received(1).EmailExistsAsync("new@example.com", 5, Arg.Any<CancellationToken>());
+        await _accounts.Received(1).UpdateEmailAsync(5, "new@example.com", Arg.Any<CancellationToken>());
         await _repository.Received(1).SaveAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_SameEmailCaseInsensitive_SkipsDuplicateCheck()
+    public async Task Handle_SameEmailCaseInsensitive_SkipsDuplicateCheckAndUpdate()
     {
-        var employee = CreateEmployee(id: 5, email: "JOHN@example.com");
+        var employee = CreateEmployee(id: 5);
         _repository.GetEmployeeByIdAsync(5, Arg.Any<CancellationToken>()).Returns(employee);
+        _accounts.GetEmailByEmployeeIdAsync(5, Arg.Any<CancellationToken>()).Returns("JOHN@example.com");
         var command = new EditEmployeeCommand
         {
             Id = 5,
@@ -104,17 +109,20 @@ public class EditEmployeeCommandHandlerTests
 
         await _handler.Handle(command, CancellationToken.None);
 
-        await _repository.DidNotReceive()
+        await _accounts.DidNotReceive()
             .EmailExistsAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<CancellationToken>());
+        await _accounts.DidNotReceive()
+            .UpdateEmailAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _repository.Received(1).SaveAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_DuplicateEmail_ThrowsAndSkipsSave()
     {
-        var employee = CreateEmployee(id: 5, email: "old@example.com");
+        var employee = CreateEmployee(id: 5);
         _repository.GetEmployeeByIdAsync(5, Arg.Any<CancellationToken>()).Returns(employee);
-        _repository.EmailExistsAsync("taken@example.com", 5, Arg.Any<CancellationToken>()).Returns(true);
+        _accounts.GetEmailByEmployeeIdAsync(5, Arg.Any<CancellationToken>()).Returns("old@example.com");
+        _accounts.EmailExistsAsync("taken@example.com", 5, Arg.Any<CancellationToken>()).Returns(true);
         var command = new EditEmployeeCommand
         {
             Id = 5,
@@ -124,19 +132,19 @@ public class EditEmployeeCommandHandlerTests
         await Assert.ThrowsAsync<DomainValidationException>(
             () => _handler.Handle(command, CancellationToken.None));
 
+        await _accounts.DidNotReceive()
+            .UpdateEmailAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _repository.DidNotReceive().SaveAsync(Arg.Any<CancellationToken>());
     }
 
-    // Blank values for FirstName/LastName violate the NotBlank guard; an invalid
-    // Email fails the email guard. Patronymic is optional and therefore not part
-    // of this theory — see Handle_BlankPatronymic_ClearsPatronymicAndSaves below.
+    // Blank values for FirstName/LastName violate the NotBlank guard.
+    // Patronymic is optional and therefore not part of this theory.
     [Theory]
-    [InlineData("",    null, null)]
-    [InlineData("   ", null, null)]
-    [InlineData(null,  "",   null)]
-    [InlineData(null,  null, "not-an-email")]
+    [InlineData("",    null)]
+    [InlineData("   ", null)]
+    [InlineData(null,  "")]
     public async Task Handle_InvalidFieldValue_ThrowsDomainValidationException(
-        string? firstName, string? lastName, string? email)
+        string? firstName, string? lastName)
     {
         var employee = CreateEmployee(id: 5);
         _repository.GetEmployeeByIdAsync(5, Arg.Any<CancellationToken>()).Returns(employee);
@@ -147,7 +155,6 @@ public class EditEmployeeCommandHandlerTests
             {
                 FirstName = firstName,
                 LastName = lastName,
-                Email = email
             }
         };
 

@@ -17,7 +17,7 @@ public class DocumentRepositoryTests : DatabaseTestBase
 
     private async Task<int> SeedProjectAsync(string name = "P")
     {
-        var pm = new Employee("Ivan", "Petrov", "Sergeevich", $"{Guid.NewGuid():N}@x.com");
+        var pm = new Employee("Ivan", "Petrov", "Sergeevich");
         Db.Employees.Add(pm);
         await Db.SaveChangesAsync(Ct);
 

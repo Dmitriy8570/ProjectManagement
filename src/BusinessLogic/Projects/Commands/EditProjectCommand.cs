@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using BusinessLogic.Common;
 using BusinessLogic.Employees;
+using BusinessLogic.Identity;
 using MediatR;
 
 namespace BusinessLogic.Projects.Commands;
@@ -43,15 +44,20 @@ public record EditProjectResponse
 
 public class EditProjectCommandHandler : IRequestHandler<EditProjectCommand, EditProjectResponse>
 {
+    private static readonly string[] EligiblePmRoles = { Roles.Director, Roles.ProjectManager };
+
     private readonly IProjectRepository _projectRepository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IUserAccountService _userAccountService;
 
     public EditProjectCommandHandler(
         IProjectRepository projectRepository,
-        IEmployeeRepository employeeRepository)
+        IEmployeeRepository employeeRepository,
+        IUserAccountService userAccountService)
     {
         _projectRepository = projectRepository;
         _employeeRepository = employeeRepository;
+        _userAccountService = userAccountService;
     }
 
     public async Task<EditProjectResponse> Handle(EditProjectCommand request, CancellationToken ct)
@@ -67,6 +73,13 @@ public class EditProjectCommandHandler : IRequestHandler<EditProjectCommand, Edi
         {
             newProjectManager = await _employeeRepository.GetEmployeeByIdAsync(data.ProjectManagerId.Value, ct)
                 ?? throw new EntityNotFoundException(nameof(Employee), data.ProjectManagerId.Value);
+
+            // Same eligibility check as on create — a plain Сотрудник can't
+            // be promoted to PM by editing the project.
+            if (!await _userAccountService.IsEmployeeInAnyRoleAsync(newProjectManager.Id, EligiblePmRoles, ct))
+                throw new DomainValidationException(
+                    "Selected employee cannot be a project manager — they must have the " +
+                    "Director or ProjectManager role.");
         }
 
         project.Update(

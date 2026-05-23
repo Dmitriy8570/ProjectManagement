@@ -251,13 +251,18 @@
             }
         });
 
-        // Project Manager autocomplete (single selection, chip-based)
+        // Project Manager autocomplete (single selection, chip-based).
+        // extraParams.roles restricts the dropdown to users eligible to lead
+        // a project — a plain Сотрудник shouldn't appear here. The server
+        // re-validates this rule in CreateProjectCommandHandler so the gate
+        // holds even if someone hand-crafts a POST.
         initSingleAutocomplete({
             searchInput:   document.getElementById('pm-search'),
             dropdown:      document.getElementById('pm-dropdown'),
             hiddenInput:   document.getElementById('pm-id'),
             chipContainer: document.getElementById('pm-chip-container'),
             searchUrl:     '/employees/search',
+            extraParams:   { roles: 'Director,ProjectManager' },
             initialId:     @Model.ProjectManagerId,
             initialName:   '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjectManagerName ?? "").Trim('"'))'
         });

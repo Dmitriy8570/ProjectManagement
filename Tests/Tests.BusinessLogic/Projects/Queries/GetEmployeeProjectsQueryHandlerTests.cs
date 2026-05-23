@@ -18,7 +18,7 @@ public class GetEmployeeProjectsQueryHandlerTests
 
     private static Employee CreateEmployee(int id, string lastName)
     {
-        var e = new Employee("First", lastName, "Patr", $"{lastName}@x.com");
+        var e = new Employee("First", lastName, "Patr");
         typeof(Employee).GetProperty("Id")!.SetValue(e, id);
         return e;
     }

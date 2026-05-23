@@ -5,6 +5,11 @@ import { projectsApi } from '@/api/projects'
 import { employeesApi } from '@/api/employees'
 import { useNotification } from '@/stores/notification'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
+import { Roles } from '@/types'
+
+// Same eligibility rule as on Create: only Director and ProjectManager can
+// be assigned as PM. Validated again on the server.
+const PM_ELIGIBLE_ROLES = [Roles.Director, Roles.ProjectManager]
 
 const route  = useRoute()
 const router = useRouter()
@@ -116,7 +121,7 @@ onMounted(load)
               <AutocompleteInput
                 v-model="pmId"
                 v-model:modelName="pmName"
-                :searchFn="(t) => employeesApi.search(t, 10)"
+                :searchFn="(t) => employeesApi.search(t, 10, PM_ELIGIBLE_ROLES)"
               />
             </div>
           </div>
