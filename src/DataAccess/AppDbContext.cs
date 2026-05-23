@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess;
 
-public class AppDbContext : IdentityDbContext<ApplicationUser>
+public sealed class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

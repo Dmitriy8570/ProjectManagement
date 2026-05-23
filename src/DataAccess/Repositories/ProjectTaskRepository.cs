@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repositories;
 
-public class ProjectTaskRepository : IProjectTaskRepository
+public sealed class ProjectTaskRepository : IProjectTaskRepository
 {
     private readonly AppDbContext _db;
 

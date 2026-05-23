@@ -13,11 +13,11 @@ namespace ProjectManagement.Api.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 [Produces("application/json")]
-// Mirrors the Web layer: only Руководитель manages the directory. Detail and
+// Mirrors the Web layer: only Director manages the directory. Detail and
 // per-employee project lists stay open to any authenticated user so the SPA
 // can render names that appear inside ProjectDtos (PM / participants); Search
 // is open to PM as well — the project wizard needs it.
-public class EmployeesController : ControllerBase
+public sealed class EmployeesController : ControllerBase
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 
@@ -81,7 +81,7 @@ public class EmployeesController : ControllerBase
     /// <summary>
     /// Lists employees, optionally restricted by a free-text term and/or role
     /// whitelist (comma-separated). The PM picker on the SPA passes
-    /// <c>roles=Director,ProjectManager</c> to hide plain Сотрудник users —
+    /// <c>roles=Director,ProjectManager</c> to hide plain Employee users —
     /// CreateProjectCommandHandler re-validates the rule on submit.
     /// </summary>
     [HttpGet]

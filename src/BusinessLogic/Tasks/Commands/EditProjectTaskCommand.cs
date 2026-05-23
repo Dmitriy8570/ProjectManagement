@@ -37,7 +37,7 @@ public record EditProjectTaskResponse
     public int Id { get; init; }
 }
 
-public class EditProjectTaskCommandHandler
+public sealed class EditProjectTaskCommandHandler
     : IRequestHandler<EditProjectTaskCommand, EditProjectTaskResponse>
 {
     private readonly IProjectTaskRepository _taskRepository;

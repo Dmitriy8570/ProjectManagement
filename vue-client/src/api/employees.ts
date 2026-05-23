@@ -5,7 +5,7 @@ export const employeesApi = {
   /**
    * @param roles Optional whitelist of role names — when set, the server
    *   restricts the results to users in at least one of these roles. Used by
-   *   the PM picker on the project wizard to hide plain Сотрудник users.
+   *   the PM picker on the project wizard to hide plain Employee users.
    *   The server re-validates the eligibility rule on submit.
    */
   search: (term = '', limit = 10, roles?: string[]) =>

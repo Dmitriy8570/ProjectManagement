@@ -14,7 +14,7 @@ namespace ProjectManagement.Web.Controllers;
 
 [Route("tasks")]
 [Authorize]
-public class TasksController : Controller
+public sealed class TasksController : Controller
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 
@@ -294,7 +294,7 @@ public class TasksController : Controller
         try
         {
             var project = await _mediator.Send(new GetProjectByIdQuery { Id = projectId }, ct);
-            var members = new List<object> { new { id = project.ProjectManager.Id, fullName = project.ProjectManager.FullName } };
+            List<object> members = [new { id = project.ProjectManager.Id, fullName = project.ProjectManager.FullName }];
             members.AddRange(project.Employees.Select(e => new { id = e.Id, fullName = e.FullName }));
             return Json(members);
         }

@@ -4,7 +4,7 @@ using BusinessLogic.Tasks;
 
 namespace ProjectManagement.Web.ViewModels.Tasks;
 
-public class CreateTaskViewModel
+public sealed class CreateTaskViewModel
 {
     [Required(ErrorMessage = "Task name is required")]
     [MaxLength(200)]

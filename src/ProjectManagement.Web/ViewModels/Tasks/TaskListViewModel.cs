@@ -3,7 +3,7 @@ using BusinessLogic.Tasks;
 
 namespace ProjectManagement.Web.ViewModels.Tasks;
 
-public class TaskListViewModel
+public sealed class TaskListViewModel
 {
     public int? ProjectId { get; set; }
     public string? ProjectName { get; set; }

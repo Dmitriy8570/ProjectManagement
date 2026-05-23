@@ -16,12 +16,12 @@ public record SearchEmployeesQuery : IRequest<IReadOnlyList<EmployeeDto>>
     /// <summary>
     /// Optional whitelist of Identity roles — when set, only employees whose
     /// linked account is in at least one of these roles are returned. Used
-    /// by the PM picker on the project wizard to hide plain Сотрудник users.
+    /// by the PM picker on the project wizard to hide plain Employee users.
     /// </summary>
     public IReadOnlyList<string>? Roles { get; init; }
 }
 
-public class SearchEmployeesQueryHandler
+public sealed class SearchEmployeesQueryHandler
     : IRequestHandler<SearchEmployeesQuery, IReadOnlyList<EmployeeDto>>
 {
     private const int MaxLimit = 100;

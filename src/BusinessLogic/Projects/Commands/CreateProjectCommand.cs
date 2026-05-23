@@ -26,7 +26,7 @@ public record CreateProjectRequest
 
     // Members are optional: a freshly-created project may start with just a
     // project manager and have participants assigned later.
-    public List<int> EmployeeIds { get; init; } = new();
+    public List<int> EmployeeIds { get; init; } = [];
 
     [Range(0, int.MaxValue)]
     public int Priority { get; init; }
@@ -42,13 +42,13 @@ public record CreateProjectResponse
     public int Id { get; init; }
 }
 
-public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand, CreateProjectResponse>
+public sealed class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand, CreateProjectResponse>
 {
     /// <summary>
     /// Only users carrying one of these roles may be appointed as a project
-    /// manager — a plain Сотрудник is not eligible.
+    /// manager — a plain Employee is not eligible.
     /// </summary>
-    private static readonly string[] EligiblePmRoles = { Roles.Director, Roles.ProjectManager };
+    private static readonly string[] EligiblePmRoles = [Roles.Director, Roles.ProjectManager];
 
     private readonly IProjectRepository _projectRepository;
     private readonly IEmployeeRepository _employeeRepository;
@@ -74,7 +74,7 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
         var projectManager = await _employeeRepository.GetEmployeeByIdAsync(data.ProjectManagerId, ct)
             ?? throw new EntityNotFoundException(nameof(Employee), data.ProjectManagerId);
 
-        // Block a plain Сотрудник from being promoted to PM through the form.
+        // Block a plain Employee from being promoted to PM through the form.
         // The UI's autocomplete already filters by role, but a hand-crafted
         // POST would otherwise sneak around it.
         if (!await _userAccountService.IsEmployeeInAnyRoleAsync(projectManager.Id, EligiblePmRoles, ct))

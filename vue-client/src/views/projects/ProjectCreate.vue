@@ -9,7 +9,7 @@ import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import FileDropZone from '@/components/FileDropZone.vue'
 import { Roles, type EmployeeDto } from '@/types'
 
-// Eligible-PM roles: a plain Сотрудник can't lead a project. The server
+// Eligible-PM roles: a plain Employee can't lead a project. The server
 // re-validates this in CreateProjectCommandHandler — the filter here is
 // purely UX.
 const PM_ELIGIBLE_ROLES = [Roles.Director, Roles.ProjectManager]

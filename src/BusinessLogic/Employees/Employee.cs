@@ -3,7 +3,7 @@ using BusinessLogic.Projects;
 
 namespace BusinessLogic.Employees;
 
-public class Employee
+public sealed class Employee
 {
     public int Id { get; private set; }
     public string FirstName { get; private set; } = default!;
@@ -20,7 +20,7 @@ public class Employee
     //
     // Exposed as IReadOnlyCollection backed by a private list so callers cannot
     // mutate the relationship bypassing the aggregate root (Project).
-    private readonly List<Project> _projects = new();
+    private readonly List<Project> _projects = [];
     public IReadOnlyCollection<Project> Projects => _projects;
 
     // Required by EF Core to rehydrate the entity from the database.

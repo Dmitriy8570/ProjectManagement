@@ -10,7 +10,7 @@ namespace ProjectManagement.Api.Controllers;
 [ApiController]
 [Route("api/auth")]
 [Produces("application/json")]
-public class AuthController : ControllerBase
+public sealed class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _users;
     private readonly IJwtTokenService _jwt;

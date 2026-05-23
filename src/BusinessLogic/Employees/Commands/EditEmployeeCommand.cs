@@ -35,7 +35,7 @@ public record EditEmployeeResponse
     public int Id { get; init; }
 }
 
-public class EditEmployeeCommandHandler : IRequestHandler<EditEmployeeCommand, EditEmployeeResponse>
+public sealed class EditEmployeeCommandHandler : IRequestHandler<EditEmployeeCommand, EditEmployeeResponse>
 {
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IUserAccountService _userAccountService;

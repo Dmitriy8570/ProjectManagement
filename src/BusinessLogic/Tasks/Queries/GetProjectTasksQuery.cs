@@ -8,7 +8,7 @@ public record GetProjectTasksQuery : IRequest<PagedResult<ProjectTaskDto>>
     public ProjectTaskListFilter Filter { get; init; } = new();
 }
 
-public class GetProjectTasksQueryHandler
+public sealed class GetProjectTasksQueryHandler
     : IRequestHandler<GetProjectTasksQuery, PagedResult<ProjectTaskDto>>
 {
     private const int MaxPageSize = 100;

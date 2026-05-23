@@ -12,7 +12,6 @@ namespace BusinessLogic.Projects.Commands;
 /// </summary>
 public record EditProjectRequest
 {
-
     [MaxLength(200)]
     public string? Name { get; init; }
 
@@ -42,9 +41,9 @@ public record EditProjectResponse
     public int Id { get; init; }
 }
 
-public class EditProjectCommandHandler : IRequestHandler<EditProjectCommand, EditProjectResponse>
+public sealed class EditProjectCommandHandler : IRequestHandler<EditProjectCommand, EditProjectResponse>
 {
-    private static readonly string[] EligiblePmRoles = { Roles.Director, Roles.ProjectManager };
+    private static readonly string[] EligiblePmRoles = [Roles.Director, Roles.ProjectManager];
 
     private readonly IProjectRepository _projectRepository;
     private readonly IEmployeeRepository _employeeRepository;
@@ -74,7 +73,7 @@ public class EditProjectCommandHandler : IRequestHandler<EditProjectCommand, Edi
             newProjectManager = await _employeeRepository.GetEmployeeByIdAsync(data.ProjectManagerId.Value, ct)
                 ?? throw new EntityNotFoundException(nameof(Employee), data.ProjectManagerId.Value);
 
-            // Same eligibility check as on create — a plain Сотрудник can't
+            // Same eligibility check as on create — a plain Employee can't
             // be promoted to PM by editing the project.
             if (!await _userAccountService.IsEmployeeInAnyRoleAsync(newProjectManager.Id, EligiblePmRoles, ct))
                 throw new DomainValidationException(

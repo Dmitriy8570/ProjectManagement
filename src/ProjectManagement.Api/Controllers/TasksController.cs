@@ -14,7 +14,7 @@ namespace ProjectManagement.Api.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class TasksController : ControllerBase
+public sealed class TasksController : ControllerBase
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 

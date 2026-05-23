@@ -10,7 +10,7 @@ namespace ProjectManagement.Web.ViewModels.Employees;
 /// is reset through Identity's own flow, role through a separate admin
 /// screen (future work).
 /// </summary>
-public class CreateEmployeeViewModel : EmployeeFormViewModel
+public sealed class CreateEmployeeViewModel : EmployeeFormViewModel
 {
     [Required, DataType(DataType.Password), MinLength(6), MaxLength(100)]
     [Display(Name = "Password")]

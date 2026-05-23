@@ -19,7 +19,7 @@ public interface IJwtTokenService
     Task<(string Token, DateTime ExpiresAtUtc)> GenerateAsync(ApplicationUser user, CancellationToken ct);
 }
 
-internal class JwtTokenService : IJwtTokenService
+internal sealed class JwtTokenService : IJwtTokenService
 {
     public const string EmployeeIdClaim = EmployeeClaimsPrincipalFactory.EmployeeIdClaim;
 
@@ -38,14 +38,14 @@ internal class JwtTokenService : IJwtTokenService
         var now = DateTime.UtcNow;
         var expires = now.Add(_options.Lifetime);
 
-        var claims = new List<Claim>
-        {
+        List<Claim> claims =
+        [
             new(JwtRegisteredClaimNames.Sub, user.Id),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Name, user.UserName ?? user.Email ?? user.Id),
             new(EmployeeIdClaim, user.EmployeeId.ToString())
-        };
+        ];
 
         if (!string.IsNullOrEmpty(user.Email))
             claims.Add(new Claim(ClaimTypes.Email, user.Email));

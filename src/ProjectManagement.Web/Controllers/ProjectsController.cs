@@ -15,14 +15,14 @@ namespace ProjectManagement.Web.Controllers;
 [Route("projects")]
 [Authorize]
 // Role rules (per spec):
-//   Руководитель      — full access to every project.
-//   Менеджер проекта  — sees and edits ONLY projects where they are the PM;
-//                       can manage that project's participants and documents.
-//   Сотрудник         — sees ONLY projects they participate in; read-only.
+//   Director         — full access to every project.
+//   ProjectManager   — sees and edits ONLY projects where they are the PM;
+//                      can manage that project's participants and documents.
+//   Employee         — sees ONLY projects they participate in; read-only.
 // Index filters the list at the query level (no flash of forbidden rows);
 // write-side actions add a resource check after loading the project so URL
 // guessing also returns 403.
-public class ProjectsController : Controller
+public sealed class ProjectsController : Controller
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 
@@ -116,7 +116,7 @@ public class ProjectsController : Controller
             return RedirectToAction(nameof(Detail), new { id });
         }
 
-        var errors = new List<string>();
+        List<string> errors = [];
         var uploaded = 0;
 
         foreach (var file in validFiles)

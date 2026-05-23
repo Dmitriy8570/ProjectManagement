@@ -5,7 +5,7 @@ namespace ProjectManagement.Api.Infrastructure;
 /// in hours to keep appsettings.json human-readable; the rest of the code
 /// turns it into a <see cref="TimeSpan"/>.
 /// </summary>
-public class JwtOptions
+public sealed class JwtOptions
 {
     public string Issuer { get; set; } = "";
     public string Audience { get; set; } = "";

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagement.Web.ViewModels.Account;
 
-public class LoginViewModel
+public sealed class LoginViewModel
 {
     [Required, EmailAddress, MaxLength(100)]
     [Display(Name = "Email")]

@@ -9,7 +9,7 @@ public record ChangeProjectTaskStatusCommand : IRequest
     public ProjectTaskStatus Status { get; init; }
 }
 
-public class ChangeProjectTaskStatusCommandHandler : IRequestHandler<ChangeProjectTaskStatusCommand>
+public sealed class ChangeProjectTaskStatusCommandHandler : IRequestHandler<ChangeProjectTaskStatusCommand>
 {
     private readonly IProjectTaskRepository _taskRepository;
 

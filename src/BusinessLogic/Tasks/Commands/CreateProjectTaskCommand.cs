@@ -39,7 +39,7 @@ public record CreateProjectTaskResponse
     public int Id { get; init; }
 }
 
-public class CreateProjectTaskCommandHandler
+public sealed class CreateProjectTaskCommandHandler
     : IRequestHandler<CreateProjectTaskCommand, CreateProjectTaskResponse>
 {
     private readonly IProjectTaskRepository _taskRepository;

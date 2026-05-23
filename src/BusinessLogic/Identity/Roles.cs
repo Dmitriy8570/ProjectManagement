@@ -23,5 +23,5 @@ public static class Roles
     /// <summary>All three roles, useful for <c>[Authorize(Roles = Roles.All)]</c>.</summary>
     public const string All = Director + "," + ProjectManager + "," + Employee;
 
-    public static readonly IReadOnlyList<string> AllList = new[] { Director, ProjectManager, Employee };
+    public static readonly IReadOnlyList<string> AllList = [Director, ProjectManager, Employee];
 }

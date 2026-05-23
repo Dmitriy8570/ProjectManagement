@@ -117,6 +117,39 @@ export interface ProjectTaskDto {
   author: EmployeeDto
   assignee: EmployeeDto
 }
+
+export interface ProjectTaskListFilter {
+  projectId?: number
+  assigneeId?: number
+  authorId?: number
+  status?: ProjectTaskStatus
+  minPriority?: number | null
+  maxPriority?: number | null
+  nameSearch?: string
+  sortBy?: string
+  descending?: boolean
+  page?: number
+  pageSize?: number
+}
+
+export interface CreateProjectTaskRequest {
+  name: string
+  comment?: string
+  projectId: number
+  authorId: number
+  assigneeId: number
+  priority: number
+  status?: ProjectTaskStatus
+}
+
+export interface EditProjectTaskRequest {
+  name?: string
+  comment?: string
+  priority?: number
+  status?: ProjectTaskStatus
+  assigneeId?: number
+}
+
 // ── Auth DTOs ─────────────────────────────────────────────────────────────────
 
 export interface CurrentUserDto {

@@ -10,7 +10,7 @@ namespace DataAccess.Identity;
 /// to <see cref="UserManager{TUser}"/> so password hashing, normalization and
 /// validation policies stay in the hands of ASP.NET Core Identity.
 /// </summary>
-internal class UserAccountService : IUserAccountService
+internal sealed class UserAccountService : IUserAccountService
 {
     private readonly UserManager<ApplicationUser> _users;
 
@@ -31,7 +31,7 @@ internal class UserAccountService : IUserAccountService
             Email = email
         };
 
-        var errors = new List<string>();
+        List<string> errors = [];
 
         foreach (var validator in _users.UserValidators)
         {

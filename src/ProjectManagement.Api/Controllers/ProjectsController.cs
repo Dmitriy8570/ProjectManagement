@@ -14,12 +14,12 @@ namespace ProjectManagement.Api.Controllers;
 [Route("api/[controller]")]
 [Produces("application/json")]
 // Role rules (per spec, identical to the Web layer):
-//   Руководитель      — full access.
-//   Менеджер проекта  — sees and edits ONLY projects where they are the PM.
-//   Сотрудник         — sees ONLY projects they participate in, read-only.
+//   Director         — full access.
+//   ProjectManager   — sees and edits ONLY projects where they are the PM.
+//   Employee         — sees ONLY projects they participate in, read-only.
 // Index filters at the query level; write-side endpoints add a resource
 // check after loading the project so URL guessing also returns 403.
-public class ProjectsController : ControllerBase
+public sealed class ProjectsController : ControllerBase
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 

@@ -10,7 +10,7 @@ namespace ProjectManagement.Web.Infrastructure;
 /// the custom EmployeeId claim from <see cref="EmployeeClaimsPrincipalFactory"/>)
 /// — no DB round-trip per request.
 /// </summary>
-internal class CurrentUserService : ICurrentUserService
+internal sealed class CurrentUserService : ICurrentUserService
 {
     private readonly IHttpContextAccessor _accessor;
 

@@ -9,7 +9,7 @@ namespace ProjectManagement.Api.Infrastructure;
 /// (<see cref="ClaimTypes.NameIdentifier"/>, <see cref="ClaimTypes.Role"/>,
 /// custom <c>EmployeeId</c>) — populated by <see cref="JwtTokenService"/>.
 /// </summary>
-internal class CurrentUserService : ICurrentUserService
+internal sealed class CurrentUserService : ICurrentUserService
 {
     private readonly IHttpContextAccessor _accessor;
 

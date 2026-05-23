@@ -4,12 +4,12 @@ using Microsoft.Extensions.Options;
 
 namespace DataAccess.Infrastructure;
 
-public class FileStorageOptions
+public sealed class FileStorageOptions
 {
     public string BasePath { get; set; } = "uploads";
 }
 
-public class LocalFileStorage : IFileStorage
+public sealed class LocalFileStorage : IFileStorage
 {
     private readonly string _basePath;
 

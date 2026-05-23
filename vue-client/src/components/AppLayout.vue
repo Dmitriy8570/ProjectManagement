@@ -53,7 +53,7 @@ async function signOut() {
         <RouterLink v-if="isDirector" to="/employees" class="pm-nav-link" :class="{ active: isActive('/employees') }" @click="closeSb">
           <i class="bi bi-people"></i>Employees
         </RouterLink>
-        <RouterLink v-if="isDirector"to="/tasks" class="pm-nav-link" :class="{ active: isActive('/tasks') }" @click="closeSb">
+        <RouterLink v-if="isDirector" to="/tasks" class="pm-nav-link" :class="{ active: isActive('/tasks') }" @click="closeSb">
           <i class="bi bi-list-check"></i>Tasks
         </RouterLink>
 
@@ -70,7 +70,6 @@ async function signOut() {
             <i class="bi bi-plus-square"></i>New Task
           </RouterLink>
         </template>
->>>>>>> task.2
       </nav>
     </aside>
 
