@@ -93,8 +93,8 @@ public class DocumentRepositoryTests : DatabaseTestBase
         var p1Docs = await sut.GetByProjectIdAsync(p1, Ct);
 
         Assert.Equal(2, p1Docs.Count);
-        Assert.Contains(p1Docs, d => d.FileName == "doc1.txt");
-        Assert.Contains(p1Docs, d => d.FileName == "doc2.txt");
+        Assert.Contains(p1Docs, d => d.FileName == "old.txt");
+        Assert.Contains(p1Docs, d => d.FileName == "new.txt");
         Assert.DoesNotContain(p1Docs, d => d.FileName == "other.txt");
     }
 

@@ -26,13 +26,9 @@ public class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocu
 
         builder.HasIndex(d => d.ProjectId);
 
-        // Cascade: deleting a project removes its document records.
-        // The file-system copies are cleaned up explicitly when documents
-        // are deleted individually; on project delete they are orphaned on disk
-        // (acceptable trade-off — a background cleanup job handles them).
-        builder.HasOne("BusinessLogic.Projects.Project", null)
+        builder.HasOne<BusinessLogic.Projects.Project>()
             .WithMany()
-            .HasForeignKey(nameof(ProjectDocument.ProjectId))
+            .HasForeignKey(d => d.ProjectId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
     }
