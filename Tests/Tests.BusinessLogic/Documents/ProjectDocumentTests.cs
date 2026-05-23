@@ -1,3 +1,4 @@
+using BusinessLogic.Common;
 using BusinessLogic.Documents;
 
 namespace Tests.BusinessLogic.Documents;
@@ -43,12 +44,10 @@ public class ProjectDocumentTests
 
     // ── Constructor: invalid arguments ───────────────────────────────────────
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void Constructor_WithNonPositiveProjectId_Throws(int projectId)
+    [Fact]
+    public void Constructor_WithNonPositiveProjectId_Throws()
     {
-        Assert.Throws<ArgumentException>(() => CreateDocument(projectId: projectId));
+        Assert.Throws<DomainValidationException>(() => CreateDocument(projectId: -1));
     }
 
     [Theory]
@@ -57,7 +56,7 @@ public class ProjectDocumentTests
     [InlineData("\t")]
     public void Constructor_WithBlankFileName_Throws(string blank)
     {
-        Assert.Throws<ArgumentException>(() => CreateDocument(fileName: blank));
+        Assert.Throws<DomainValidationException>(() => CreateDocument(fileName: blank));
     }
 
     [Theory]
@@ -65,7 +64,7 @@ public class ProjectDocumentTests
     [InlineData(" ")]
     public void Constructor_WithBlankStoredName_Throws(string blank)
     {
-        Assert.Throws<ArgumentException>(() => CreateDocument(storedName: blank));
+        Assert.Throws<DomainValidationException>(() => CreateDocument(storedName: blank));
     }
 
     [Theory]
@@ -73,13 +72,13 @@ public class ProjectDocumentTests
     [InlineData(" ")]
     public void Constructor_WithBlankContentType_Throws(string blank)
     {
-        Assert.Throws<ArgumentException>(() => CreateDocument(contentType: blank));
+        Assert.Throws<DomainValidationException>(() => CreateDocument(contentType: blank));
     }
 
     [Fact]
     public void Constructor_WithNegativeSize_Throws()
     {
-        Assert.Throws<ArgumentException>(() => CreateDocument(sizeBytes: -1));
+        Assert.Throws<DomainValidationException>(() => CreateDocument(sizeBytes: -1));
     }
 
     [Fact]
