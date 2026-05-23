@@ -154,6 +154,29 @@ public class CreateProjectCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_PmEligibilityCheck_QueriesDirectorAndProjectManagerRoles()
+    {
+        // The handler must ask the account service whether the chosen PM has
+        // EITHER the Director OR the ProjectManager role — locking the list
+        // down to just one of them would silently bar legitimate directors
+        // from being appointed.
+        var pm = CreateEmployee(id: 1);
+        _employeeRepo.GetEmployeeByIdAsync(1, Arg.Any<CancellationToken>()).Returns(pm);
+        _employeeRepo.GetEmployeesByIdsAsync(Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<Employee>());
+
+        await _handler.Handle(CreateCommand(), CancellationToken.None);
+
+        await _accounts.Received(1).IsEmployeeInAnyRoleAsync(
+            1,
+            Arg.Is<IReadOnlyCollection<string>>(r =>
+                r.Contains(Roles.Director) &&
+                r.Contains(Roles.ProjectManager) &&
+                r.Count == 2),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_ValidData_CreatesProjectWithCorrectFields()
     {
         var pm = CreateEmployee(id: 1);

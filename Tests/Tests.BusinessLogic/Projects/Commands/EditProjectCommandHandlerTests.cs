@@ -23,6 +23,12 @@ public class EditProjectCommandHandlerTests
         _employeeRepo = Substitute.For<IEmployeeRepository>();
         _userAccountService = Substitute.For<IUserAccountService>();
         _handler = new EditProjectCommandHandler(_projectRepo, _employeeRepo, _userAccountService);
+
+        // Mirror CreateProjectCommandHandlerTests: PM-eligibility check passes by
+        // default. Tests covering the negative case override this explicitly.
+        _userAccountService.IsEmployeeInAnyRoleAsync(
+                Arg.Any<int>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(true);
     }
 
     private static Employee CreateEmployee(int id, string email = "person@example.com")
@@ -133,6 +139,45 @@ public class EditProjectCommandHandlerTests
             }, CancellationToken.None));
 
         await _projectRepo.DidNotReceive().SaveAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_NewPmNotInEligibleRole_ThrowsDomainValidationException()
+    {
+        var project = CreateProject(id: 5, pmId: 10);
+        var newPm = CreateEmployee(id: 20);
+        _projectRepo.GetProjectByIdAsync(5, Arg.Any<CancellationToken>()).Returns(project);
+        _employeeRepo.GetEmployeeByIdAsync(20, Arg.Any<CancellationToken>()).Returns(newPm);
+        _userAccountService.IsEmployeeInAnyRoleAsync(
+                20, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        await Assert.ThrowsAsync<DomainValidationException>(
+            () => _handler.Handle(new EditProjectCommand
+            {
+                Id = 5,
+                Data = new EditProjectRequest { ProjectManagerId = 20 }
+            }, CancellationToken.None));
+
+        await _projectRepo.DidNotReceive().SaveAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_SamePmIdRevisited_SkipsRoleCheck()
+    {
+        // The handler avoids the round-trip when the caller passes the existing
+        // PM id — no reason to re-check role eligibility for an unchanged value.
+        var project = CreateProject(id: 5, pmId: 10);
+        _projectRepo.GetProjectByIdAsync(5, Arg.Any<CancellationToken>()).Returns(project);
+
+        await _handler.Handle(new EditProjectCommand
+        {
+            Id = 5,
+            Data = new EditProjectRequest { ProjectManagerId = 10 }
+        }, CancellationToken.None);
+
+        await _userAccountService.DidNotReceive().IsEmployeeInAnyRoleAsync(
+            Arg.Any<int>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

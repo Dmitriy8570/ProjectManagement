@@ -1,6 +1,9 @@
 using BusinessLogic.Employees;
+using BusinessLogic.Identity;
 using BusinessLogic.Projects;
+using DataAccess.Identity;
 using DataAccess.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tests.DataAccess;
@@ -19,6 +22,49 @@ public class EmployeeRepositoryTests : DatabaseTestBase
         return e;
     }
 
+    // Seeds an AspNetUsers row linked to an employee so search/role tests can
+    // exercise the EF join against Users — Email moved off Employee onto the
+    // linked ApplicationUser.
+    private async Task<ApplicationUser> AddUserAsync(
+        Employee employee, string email, string? role = null)
+    {
+        var normalized = email.ToUpperInvariant();
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid().ToString(),
+            UserName = email,
+            NormalizedUserName = normalized,
+            Email = email,
+            NormalizedEmail = normalized,
+            EmployeeId = employee.Id,
+            SecurityStamp = Guid.NewGuid().ToString()
+        };
+        Db.Users.Add(user);
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            var roleEntity = await Db.Roles
+                .FirstOrDefaultAsync(r => r.Name == role, Ct);
+            if (roleEntity is null)
+            {
+                roleEntity = new IdentityRole(role)
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    NormalizedName = role.ToUpperInvariant()
+                };
+                Db.Roles.Add(roleEntity);
+            }
+            Db.UserRoles.Add(new IdentityUserRole<string>
+            {
+                UserId = user.Id,
+                RoleId = roleEntity.Id
+            });
+        }
+
+        await Db.SaveChangesAsync(Ct);
+        return user;
+    }
+
     // ── SearchEmployeesAsync ──────────────────────────────────────────────────
 
     [Fact]
@@ -30,7 +76,7 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync(null, 100, Ct);
+        var result = await sut.SearchEmployeesAsync(null, 100, null, Ct);
 
         Assert.Equal(["Alpha", "Mu", "Zeta"], result.Select(e => e.LastName));
     }
@@ -43,7 +89,7 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync("   ", 100, Ct);
+        var result = await sut.SearchEmployeesAsync("   ", 100, null, Ct);
 
         Assert.Equal(2, result.Count);
     }
@@ -56,7 +102,7 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync("Ivan", 100, Ct);
+        var result = await sut.SearchEmployeesAsync("Ivan", 100, null, Ct);
 
         Assert.Equal(2, result.Count);
     }
@@ -69,7 +115,7 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync("Smith", 100, Ct);
+        var result = await sut.SearchEmployeesAsync("Smith", 100, null, Ct);
 
         Assert.Single(result);
         Assert.Equal("Alice", result[0].FirstName);
@@ -83,7 +129,7 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync("Nikolaevich", 100, Ct);
+        var result = await sut.SearchEmployeesAsync("Nikolaevich", 100, null, Ct);
 
         Assert.Single(result);
         Assert.Equal("A", result[0].FirstName);
@@ -92,12 +138,14 @@ public class EmployeeRepositoryTests : DatabaseTestBase
     [Fact]
     public async Task SearchEmployeesAsync_MatchesByEmail()
     {
-        await AddAsync(Make("A", "A", email: "unique@corp.com"));
-        await AddAsync(Make("B", "B", email: "other@corp.com"));
+        var e1 = await AddAsync(Make("A", "A"));
+        var e2 = await AddAsync(Make("B", "B"));
+        await AddUserAsync(e1, "unique@corp.com");
+        await AddUserAsync(e2, "other@corp.com");
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync("unique", 100, Ct);
+        var result = await sut.SearchEmployeesAsync("unique", 100, null, Ct);
 
         Assert.Single(result);
         Assert.Equal("unique@corp.com", result[0].Email);
@@ -110,7 +158,7 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync("alice", 100, Ct);
+        var result = await sut.SearchEmployeesAsync("alice", 100, null, Ct);
 
         Assert.Single(result);
     }
@@ -118,13 +166,15 @@ public class EmployeeRepositoryTests : DatabaseTestBase
     [Fact]
     public async Task SearchEmployeesAsync_EscapesPercentWildcard()
     {
-        await AddAsync(Make("A", "A", email: "a@x.com"));
-        await AddAsync(Make("B", "B", email: "b@x.com"));
+        var e1 = await AddAsync(Make("A", "A"));
+        var e2 = await AddAsync(Make("B", "B"));
+        await AddUserAsync(e1, "a@x.com");
+        await AddUserAsync(e2, "b@x.com");
 
         var sut = new EmployeeRepository(Db);
 
         // "%" alone would match everything if not escaped
-        var result = await sut.SearchEmployeesAsync("%", 100, Ct);
+        var result = await sut.SearchEmployeesAsync("%", 100, null, Ct);
 
         Assert.Empty(result);
     }
@@ -137,7 +187,7 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync(null, 3, Ct);
+        var result = await sut.SearchEmployeesAsync(null, 3, null, Ct);
 
         Assert.Equal(3, result.Count);
     }
@@ -151,9 +201,115 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 
         var sut = new EmployeeRepository(Db);
 
-        var result = await sut.SearchEmployeesAsync(null, 100, Ct);
+        var result = await sut.SearchEmployeesAsync(null, 100, null, Ct);
 
         Assert.Equal(["Bob", "Alice", "Zara"], result.Select(e => e.FirstName));
+    }
+
+    [Fact]
+    public async Task SearchEmployeesAsync_EmployeeWithoutLinkedUser_StillReturnedWithEmptyEmail()
+    {
+        // The repository does a LEFT JOIN to AspNetUsers so an employee in a
+        // transient state without a linked account doesn't silently disappear.
+        await AddAsync(Make("Lonely", "Worker"));
+
+        var sut = new EmployeeRepository(Db);
+
+        var result = await sut.SearchEmployeesAsync(null, 100, null, Ct);
+
+        Assert.Single(result);
+        Assert.Equal(string.Empty, result[0].Email);
+    }
+
+    // ── SearchEmployeesAsync — role filter ───────────────────────────────────
+
+    [Fact]
+    public async Task SearchEmployeesAsync_RoleFilter_OnlyReturnsEmployeesInListedRoles()
+    {
+        // Three employees: a Director, a ProjectManager, and a plain Employee.
+        // Filtering by Director+ProjectManager must hide the plain Employee.
+        var director = await AddAsync(Make("D", "Director"));
+        var pm = await AddAsync(Make("P", "Manager"));
+        var emp = await AddAsync(Make("E", "Worker"));
+
+        await AddUserAsync(director, "director@x.com", Roles.Director);
+        await AddUserAsync(pm, "pm@x.com", Roles.ProjectManager);
+        await AddUserAsync(emp, "emp@x.com", Roles.Employee);
+
+        var sut = new EmployeeRepository(Db);
+
+        var result = await sut.SearchEmployeesAsync(
+            null, 100, new[] { Roles.Director, Roles.ProjectManager }, Ct);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, e => e.Email == "director@x.com");
+        Assert.Contains(result, e => e.Email == "pm@x.com");
+        Assert.DoesNotContain(result, e => e.Email == "emp@x.com");
+    }
+
+    [Fact]
+    public async Task SearchEmployeesAsync_RoleFilter_ExcludesEmployeesWithoutAccount()
+    {
+        // No user account => no role => must be filtered out.
+        var pm = await AddAsync(Make("P", "Manager"));
+        await AddAsync(Make("L", "Lonely"));   // no linked user
+        await AddUserAsync(pm, "pm@x.com", Roles.ProjectManager);
+
+        var sut = new EmployeeRepository(Db);
+
+        var result = await sut.SearchEmployeesAsync(
+            null, 100, new[] { Roles.ProjectManager }, Ct);
+
+        Assert.Single(result);
+        Assert.Equal("pm@x.com", result[0].Email);
+    }
+
+    [Fact]
+    public async Task SearchEmployeesAsync_RoleFilter_IsCaseInsensitive()
+    {
+        var pm = await AddAsync(Make("P", "Manager"));
+        await AddUserAsync(pm, "pm@x.com", Roles.ProjectManager);
+
+        var sut = new EmployeeRepository(Db);
+
+        // Lower-cased role name still matches via NormalizedName.
+        var result = await sut.SearchEmployeesAsync(null, 100, new[] { "projectmanager" }, Ct);
+
+        Assert.Single(result);
+    }
+
+    [Fact]
+    public async Task SearchEmployeesAsync_EmptyRoleFilter_BehavesAsUnfiltered()
+    {
+        var pm = await AddAsync(Make("P", "Manager"));
+        await AddAsync(Make("L", "Lonely"));
+        await AddUserAsync(pm, "pm@x.com", Roles.ProjectManager);
+
+        var sut = new EmployeeRepository(Db);
+
+        var result = await sut.SearchEmployeesAsync(null, 100, Array.Empty<string>(), Ct);
+
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public async Task SearchEmployeesAsync_RoleFilter_CombinesWithTerm()
+    {
+        var d = await AddAsync(Make("Anna",   "Director"));
+        var pm = await AddAsync(Make("Anna",  "Manager"));
+        var emp = await AddAsync(Make("Anna", "Worker"));
+        await AddUserAsync(d, "d@x.com", Roles.Director);
+        await AddUserAsync(pm, "pm@x.com", Roles.ProjectManager);
+        await AddUserAsync(emp, "e@x.com", Roles.Employee);
+
+        var sut = new EmployeeRepository(Db);
+
+        // Term matches all three by first name, but role filter narrows to PMs.
+        var result = await sut.SearchEmployeesAsync(
+            "Anna", 100, new[] { Roles.ProjectManager }, Ct);
+
+        Assert.Single(result);
+        Assert.Equal("pm@x.com", result[0].Email);
     }
 
     // ── GetEmployeeByIdAsync ──────────────────────────────────────────────────
@@ -179,6 +335,35 @@ public class EmployeeRepositoryTests : DatabaseTestBase
         var result = await sut.GetEmployeeByIdAsync(999, Ct);
 
         Assert.Null(result);
+    }
+
+    // ── GetEmployeeDtoByIdAsync ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetEmployeeDtoByIdAsync_ProjectsEmailFromLinkedUser()
+    {
+        var emp = await AddAsync(Make("Alice", "Smith"));
+        await AddUserAsync(emp, "alice@x.com");
+
+        var sut = new EmployeeRepository(Db);
+
+        var dto = await sut.GetEmployeeDtoByIdAsync(emp.Id, Ct);
+
+        Assert.NotNull(dto);
+        Assert.Equal("alice@x.com", dto!.Email);
+    }
+
+    [Fact]
+    public async Task GetEmployeeDtoByIdAsync_NoLinkedUser_ReturnsDtoWithEmptyEmail()
+    {
+        var emp = await AddAsync(Make("Alice", "Smith"));
+
+        var sut = new EmployeeRepository(Db);
+
+        var dto = await sut.GetEmployeeDtoByIdAsync(emp.Id, Ct);
+
+        Assert.NotNull(dto);
+        Assert.Equal(string.Empty, dto!.Email);
     }
 
     // ── GetEmployeesByIdsAsync ────────────────────────────────────────────────
@@ -266,59 +451,6 @@ public class EmployeeRepositoryTests : DatabaseTestBase
         var deleted = await sut.DeleteEmployeeAsync(999, Ct);
 
         Assert.False(deleted);
-    }
-
-    // ── EmailExistsAsync ──────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task EmailExistsAsync_ReturnsTrue_WhenEmailTaken()
-    {
-        await AddAsync(Make("A", "A", email: "taken@x.com"));
-
-        var sut = new EmployeeRepository(Db);
-
-        Assert.True(await sut.EmailExistsAsync("taken@x.com", null, Ct));
-    }
-
-    [Fact]
-    public async Task EmailExistsAsync_ReturnsFalse_WhenEmailFree()
-    {
-        var sut = new EmployeeRepository(Db);
-
-        Assert.False(await sut.EmailExistsAsync("free@x.com", null, Ct));
-    }
-
-    [Fact]
-    public async Task EmailExistsAsync_IsCaseInsensitive()
-    {
-        await AddAsync(Make("A", "A", email: "User@X.COM"));
-
-        var sut = new EmployeeRepository(Db);
-
-        Assert.True(await sut.EmailExistsAsync("user@x.com", null, Ct));
-    }
-
-    [Fact]
-    public async Task EmailExistsAsync_ExcludesSpecifiedId()
-    {
-        var emp = await AddAsync(Make("A", "A", email: "same@x.com"));
-
-        var sut = new EmployeeRepository(Db);
-
-        // Same employee editing their own email — should not report a conflict.
-        Assert.False(await sut.EmailExistsAsync("same@x.com", emp.Id, Ct));
-    }
-
-    [Fact]
-    public async Task EmailExistsAsync_ReturnsTrueForOtherEmployee_WhenExcludingDifferentId()
-    {
-        var emp1 = await AddAsync(Make("A", "A", email: "taken@x.com"));
-        var emp2 = await AddAsync(Make("B", "B", email: "other@x.com"));
-
-        var sut = new EmployeeRepository(Db);
-
-        // emp2 tries to take emp1's email — should still be a conflict.
-        Assert.True(await sut.EmailExistsAsync("taken@x.com", emp2.Id, Ct));
     }
 
     // ── IsProjectManagerAsync ─────────────────────────────────────────────────
