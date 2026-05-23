@@ -5,18 +5,16 @@
 namespace DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class FixDocument : Migration
+    public partial class FinalMergeSnapshot : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
         }
     }
 }
