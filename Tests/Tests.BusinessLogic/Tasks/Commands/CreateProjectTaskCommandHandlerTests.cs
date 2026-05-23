@@ -1,4 +1,4 @@
-using BusinessLogic.Common;
+﻿using BusinessLogic.Common;
 using BusinessLogic.Employees;
 using BusinessLogic.Projects;
 using BusinessLogic.Tasks;
@@ -22,9 +22,9 @@ public class CreateProjectTaskCommandHandlerTests
         _handler = new CreateProjectTaskCommandHandler(_taskRepo, _projectRepo, _employeeRepo);
     }
 
-    private static Employee CreateEmployee(int id, string email = "person@example.com")
+    private static Employee CreateEmployee(int id)
     {
-        var employee = new Employee("First", "Last", "Patronymic", email);
+        var employee = new Employee("First", "Last", "Patronymic");
         typeof(Employee).GetProperty(nameof(Employee.Id))!.SetValue(employee, id);
         return employee;
     }
@@ -44,8 +44,8 @@ public class CreateProjectTaskCommandHandlerTests
     public async Task Handle_ValidData_CreatesTaskAndReturnsId()
     {
         var pm = CreateEmployee(1);
-        var participant = CreateEmployee(2, "p@example.com");
-        var author = CreateEmployee(3, "a@example.com");
+        var participant = CreateEmployee(2);
+        var author = CreateEmployee(3);
         var project = CreateProject(10, pm, participant);
 
         _projectRepo.GetProjectByIdAsync(10, Arg.Any<CancellationToken>()).Returns(project);
@@ -121,7 +121,7 @@ public class CreateProjectTaskCommandHandlerTests
     public async Task Handle_AssigneeNotProjectMember_ThrowsDomainValidation()
     {
         var pm = CreateEmployee(1);
-        var outsider = CreateEmployee(99, "out@example.com");
+        var outsider = CreateEmployee(99);
         var project = CreateProject(10, pm);
 
         _projectRepo.GetProjectByIdAsync(10, Arg.Any<CancellationToken>()).Returns(project);
