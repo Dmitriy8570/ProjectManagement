@@ -16,6 +16,8 @@ public record ProjectTaskListFilter
     public int? ProjectId { get; init; }
     public int? AssigneeId { get; init; }
     public int? AuthorId { get; init; }
+    public int? ProjectManagerId { get; init; }
+    public int? ParticipantEmployeeId { get; init; }
     public ProjectTaskStatus? Status { get; init; }
     public int? MinPriority { get; init; }
     public int? MaxPriority { get; init; }

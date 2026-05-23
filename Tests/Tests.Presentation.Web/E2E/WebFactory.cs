@@ -94,6 +94,7 @@ public sealed class WebFactory : WebApplicationFactory<Program>
         await db.Database.ExecuteSqlRawAsync("DELETE FROM AspNetUsers");
         await db.Database.ExecuteSqlRawAsync("DELETE FROM AspNetRoleClaims");
         await db.Database.ExecuteSqlRawAsync("DELETE FROM AspNetRoles");
+        await db.Database.ExecuteSqlRawAsync("DELETE FROM ProjectTasks");
         await db.Database.ExecuteSqlRawAsync("DELETE FROM ProjectDocuments");
         await db.Database.ExecuteSqlRawAsync("DELETE FROM ProjectEmployees");
         await db.Database.ExecuteSqlRawAsync("DELETE FROM Projects");

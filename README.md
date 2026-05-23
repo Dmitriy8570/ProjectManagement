@@ -19,7 +19,6 @@
 - [Тесты](#тесты)
 - [Миграции](#миграции)
 - [Конфигурация](#конфигурация)
-- [Замечания и известные ограничения](#замечания-и-известные-ограничения)
 
 ---
 
@@ -102,9 +101,11 @@
   - **Employee** — read-only, только проекты, где он участник.
 - ✅ Фильтрация на уровне query, а не view — запрещённые проекты в SPA даже
   не «мигают».
-- ⚠️ **Известное ограничение по доп. 2**: авторизация по сущности
-  **Task** реализована не полностью — см.
-  [замечания](#замечания-и-известные-ограничения).
+- ✅ Авторизационные правила для **Задач** реализованы и в Web, и в Api:
+  - **Director** — полный доступ ко всем задачам.
+  - **ProjectManager** — CRUD задач только в проектах, где он PM.
+  - **Employee** — видит задачи в своих проектах, может менять статус
+    только своих задач (где он `Assignee`).
 
 ---
 
@@ -188,7 +189,7 @@ ProjectManagement/
 Требуется **Docker Desktop ≥ 4.x** (Compose v2).
 
 ```bash
-cp .env.example .env             # подправь порты/строку подключения, если нужно
+cp .env.example .env         
 docker compose --profile vue up --build
 ```
 
@@ -275,9 +276,6 @@ dotnet run --project src/ProjectManagement.Web --launch-profile https
 | `pm@local` | `Pm#12345` | ProjectManager |
 | `employee@local` | `Emp#12345` | Employee |
 
-> ⚠️ Это demo-секреты для локального запуска. Перед публичным деплоем
-> поменяйте `Identity:Seed:Accounts` и `Jwt:Key` (≥ 32 символов) через
-> user-secrets / env-переменные.
 
 ---
 
@@ -287,14 +285,14 @@ dotnet run --project src/ProjectManagement.Web --launch-profile https
 dotnet test
 ```
 
-В репозитории 4 тестовых проекта, **370 тестов** в сумме:
+В репозитории 4 тестовых проекта, **441 тест** в сумме:
 
 | Проект | Что тестирует | Кол-во |
 |---|---|---:|
-| `Tests.BusinessLogic` | Доменные сущности (`Project`, `Employee`, `ProjectTask`, `ProjectDocument`), все Command/Query-хендлеры через NSubstitute | 222 |
-| `Tests.DataAccess` | Репозитории на in-memory SQLite (фильтры, сортировка, пагинация, удаление с каскадом) | 61 |
-| `Tests.Presentation` | E2E для Web API через `WebApplicationFactory<Program>` с тестовой JWT-схемой | 50 |
-| `Tests.Presentation.Web` | E2E для Razor MVC через `WebApplicationFactory<Program>` с тестовой cookie-схемой | 37 |
+| `Tests.BusinessLogic` | Доменные сущности (`Project`, `Employee`, `ProjectTask`, `ProjectDocument`), все Command/Query-хендлеры через NSubstitute | 238 |
+| `Tests.DataAccess` | Репозитории на in-memory SQLite (фильтры, сортировка, пагинация, удаление с каскадом) | 81 |
+| `Tests.Presentation` | E2E для Web API через `WebApplicationFactory<Program>` с тестовой JWT-схемой | 71 |
+| `Tests.Presentation.Web` | E2E для Razor MVC через `WebApplicationFactory<Program>` с тестовой cookie-схемой | 51 |
 
 E2E-тесты гоняют живой пайплайн (контроллер → MediatR → EF → SQLite) на
 изолированной БД per-test через подмену провайдера в
@@ -336,7 +334,7 @@ dotnet ef database update --project src/DataAccess --startup-project src/Project
   "Jwt": {                                       // только для Api
     "Issuer": "ProjectManagement.Api",
     "Audience": "ProjectManagement.Vue",
-    "Key": "dev-only-secret-please-replace-in-production-32+chars",
+    "Key": "yes-this-is-a-real-key-no-it-should-not-be-in-production",
     "LifetimeHours": 8
   },
   "Identity": {
@@ -356,23 +354,3 @@ ConnectionStrings__DefaultConnection=Server=mssql,1433;Database=ProjectManagemen
 FileStorage__BasePath=/data/uploads
 ```
 
----
-
-## Замечания и известные ограничения
-
-- 🟡 **Email сотрудника живёт на `ApplicationUser`, а не на доменной
-  сущности `Employee`.** Так Identity-слой целиком владеет учётными
-  данными, а доменный `Employee` остаётся чистым. Снаружи поле
-  по-прежнему отдаётся в `EmployeeDto.Email` через join, так что
-  функционально требование ТЗ закрыто.
-- 🟠 **Авторизация по задачам реализована не полностью.** Для проектов
-  правила трёх ролей разведены (см. `ProjectsController.CanView/CanManage`
-  в обоих презентациях), а `TasksController` (Api/Web) сейчас защищён
-  только глобальной политикой «требуется аутентификация». Это не закрывает
-  букву ТЗ для роли `Employee`/`ProjectManager`. Если нужно — добавляется
-  декларативно через `[Authorize(Roles = …)]` + ресурсная проверка
-  «AssigneeId == currentUser.EmployeeId» / «Project.ProjectManagerId ==
-  currentUser.EmployeeId».
-- ⚪ Папка `src/Presentation/` — пустой остаток от ранней итерации
-  (есть только `.Backup.tmp` и SQLite-журнал, всё игнорируется git).
-  Удаляется без последствий.

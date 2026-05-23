@@ -1,21 +1,31 @@
 using BusinessLogic.Common;
+using BusinessLogic.Identity;
 using BusinessLogic.Projects;
 using BusinessLogic.Projects.Queries;
 using BusinessLogic.Tasks;
 using BusinessLogic.Tasks.Commands;
 using BusinessLogic.Tasks.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Web.ViewModels.Tasks;
 
 namespace ProjectManagement.Web.Controllers;
 
 [Route("tasks")]
+[Authorize]
 public class TasksController : Controller
 {
-    private readonly IMediator _mediator;
+    private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 
-    public TasksController(IMediator mediator) => _mediator = mediator;
+    private readonly IMediator _mediator;
+    private readonly ICurrentUserService _currentUser;
+
+    public TasksController(IMediator mediator, ICurrentUserService currentUser)
+    {
+        _mediator = mediator;
+        _currentUser = currentUser;
+    }
 
     [HttpGet("")]
     public async Task<IActionResult> Index([FromQuery] TaskListViewModel vm, CancellationToken ct)
@@ -36,13 +46,21 @@ public class TasksController : Controller
             PageSize    = vm.PageSize
         };
 
+        if (!User.IsInRole(Roles.Director))
+        {
+            var empId = _currentUser.EmployeeId;
+            if (empId is null)
+                return Forbid();
+
+            filter = User.IsInRole(Roles.ProjectManager)
+                ? filter with { ProjectManagerId = empId }
+                : filter with { ParticipantEmployeeId = empId };
+        }
+
         var result = await _mediator.Send(new GetProjectTasksQuery { Filter = filter }, ct);
         vm.Items = result.Items;
         vm.TotalCount = result.TotalCount;
 
-        // Full project record is loaded so the context banner can show dates
-        // and manager. ProjectName is kept as a separate flat field for the
-        // breadcrumb/heading so views don't need to null-check Project there.
         if (vm.ProjectId.HasValue)
         {
             try
@@ -51,7 +69,7 @@ public class TasksController : Controller
                 vm.Project = project;
                 vm.ProjectName = project.Name;
             }
-            catch (EntityNotFoundException) { /* fall through — the empty list will show */ }
+            catch (EntityNotFoundException) { }
         }
 
         return View(vm);
@@ -63,6 +81,8 @@ public class TasksController : Controller
         try
         {
             var task = await _mediator.Send(new GetProjectTaskByIdQuery { Id = id }, ct);
+            if (!await CanViewProjectAsync(task.ProjectId, ct))
+                return Forbid();
             return View(task);
         }
         catch (EntityNotFoundException)
@@ -72,8 +92,12 @@ public class TasksController : Controller
     }
 
     [HttpGet("create")]
+    [Authorize(Roles = DirectorOrPm)]
     public async Task<IActionResult> Create([FromQuery] int? projectId, CancellationToken ct)
     {
+        if (projectId.HasValue && !await CanManageProjectAsync(projectId.Value, ct))
+            return Forbid();
+
         var vm = new CreateTaskViewModel();
         await PopulateCreateLookups(vm, projectId, ct);
         if (projectId.HasValue)
@@ -85,9 +109,13 @@ public class TasksController : Controller
     }
 
     [HttpPost("create")]
+    [Authorize(Roles = DirectorOrPm)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateTaskViewModel model, CancellationToken ct)
     {
+        if (!await CanManageProjectAsync(model.ProjectId, ct))
+            return Forbid();
+
         if (!ModelState.IsValid)
         {
             await PopulateCreateLookups(model, model.ProjectId, ct);
@@ -127,11 +155,15 @@ public class TasksController : Controller
     }
 
     [HttpGet("{id:int}/edit")]
+    [Authorize(Roles = DirectorOrPm)]
     public async Task<IActionResult> Edit(int id, CancellationToken ct)
     {
         try
         {
             var task = await _mediator.Send(new GetProjectTaskByIdQuery { Id = id }, ct);
+            if (!await CanManageProjectAsync(task.ProjectId, ct))
+                return Forbid();
+
             var project = await _mediator.Send(new GetProjectByIdQuery { Id = task.ProjectId }, ct);
             return View(new EditTaskViewModel
             {
@@ -153,9 +185,13 @@ public class TasksController : Controller
     }
 
     [HttpPost("{id:int}/edit")]
+    [Authorize(Roles = DirectorOrPm)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, EditTaskViewModel model, CancellationToken ct)
     {
+        if (!await CanManageProjectAsync(model.ProjectId, ct))
+            return Forbid();
+
         if (!ModelState.IsValid)
         {
             await PopulateEditLookups(model, ct);
@@ -194,11 +230,16 @@ public class TasksController : Controller
     }
 
     [HttpPost("{id:int}/delete")]
+    [Authorize(Roles = DirectorOrPm)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         try
         {
+            var task = await _mediator.Send(new GetProjectTaskByIdQuery { Id = id }, ct);
+            if (!await CanManageProjectAsync(task.ProjectId, ct))
+                return Forbid();
+
             await _mediator.Send(new DeleteProjectTaskCommand { Id = id }, ct);
             TempData["Success"] = "Task deleted.";
         }
@@ -215,6 +256,24 @@ public class TasksController : Controller
     {
         try
         {
+            var task = await _mediator.Send(new GetProjectTaskByIdQuery { Id = id }, ct);
+
+            if (User.IsInRole(Roles.Director))
+            {
+                // Director can change any task's status.
+            }
+            else if (User.IsInRole(Roles.ProjectManager))
+            {
+                if (!await CanManageProjectAsync(task.ProjectId, ct))
+                    return Forbid();
+            }
+            else
+            {
+                var empId = _currentUser.EmployeeId;
+                if (empId is null || task.Assignee.Id != empId)
+                    return Forbid();
+            }
+
             await _mediator.Send(new ChangeProjectTaskStatusCommand { Id = id, Status = status }, ct);
             TempData["Success"] = "Status updated.";
         }
@@ -223,16 +282,12 @@ public class TasksController : Controller
             TempData["Error"] = ex.Message;
         }
 
-        // Url.IsLocalUrl prevents open-redirect: only paths inside this app are honored.
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
 
         return RedirectToAction(nameof(Detail), new { id });
     }
 
-    // Small JSON endpoint used by the Create view to refresh the assignee
-    // dropdown when the user changes the project — keeps the page from having
-    // to round-trip a full server render.
     [HttpGet("project-members")]
     public async Task<IActionResult> ProjectMembers([FromQuery] int projectId, CancellationToken ct)
     {
@@ -249,11 +304,55 @@ public class TasksController : Controller
         }
     }
 
+    // ── Authorization helpers ────────────────────────────────────────────
+
+    private async Task<bool> CanViewProjectAsync(int projectId, CancellationToken ct)
+    {
+        if (User.IsInRole(Roles.Director))
+            return true;
+        try
+        {
+            var project = await _mediator.Send(new GetProjectByIdQuery { Id = projectId }, ct);
+            var empId = _currentUser.EmployeeId;
+            if (empId is null) return false;
+            return project.ProjectManager.Id == empId
+                || project.Employees.Any(e => e.Id == empId);
+        }
+        catch (EntityNotFoundException)
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> CanManageProjectAsync(int projectId, CancellationToken ct)
+    {
+        if (User.IsInRole(Roles.Director))
+            return true;
+        try
+        {
+            var project = await _mediator.Send(new GetProjectByIdQuery { Id = projectId }, ct);
+            var empId = _currentUser.EmployeeId;
+            return empId is not null && project.ProjectManager.Id == empId;
+        }
+        catch (EntityNotFoundException)
+        {
+            return false;
+        }
+    }
+
     private async Task PopulateCreateLookups(CreateTaskViewModel vm, int? projectId, CancellationToken ct)
     {
-        // Pull a generous page of projects (matches the Vue client's behavior).
+        var projectFilter = new ProjectListFilter { PageSize = 100, SortBy = ProjectSortBy.Name };
+
+        if (!User.IsInRole(Roles.Director))
+        {
+            var empId = _currentUser.EmployeeId;
+            if (empId is not null && User.IsInRole(Roles.ProjectManager))
+                projectFilter = projectFilter with { ProjectManagerId = empId };
+        }
+
         var projectsPage = await _mediator.Send(
-            new GetProjectsQuery { Filter = new ProjectListFilter { PageSize = 100, SortBy = ProjectSortBy.Name } }, ct);
+            new GetProjectsQuery { Filter = projectFilter }, ct);
         vm.AvailableProjects = projectsPage.Items;
 
         if (projectId.HasValue)
@@ -262,7 +361,7 @@ public class TasksController : Controller
             {
                 vm.SelectedProject = await _mediator.Send(new GetProjectByIdQuery { Id = projectId.Value }, ct);
             }
-            catch (EntityNotFoundException) { /* selector renders empty; user picks a different project */ }
+            catch (EntityNotFoundException) { }
         }
     }
 
@@ -272,6 +371,6 @@ public class TasksController : Controller
         {
             vm.Project = await _mediator.Send(new GetProjectByIdQuery { Id = vm.ProjectId }, ct);
         }
-        catch (EntityNotFoundException) { /* leave Project null — view shows a warning */ }
+        catch (EntityNotFoundException) { }
     }
 }

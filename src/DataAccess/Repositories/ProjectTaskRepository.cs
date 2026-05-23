@@ -25,6 +25,15 @@ public class ProjectTaskRepository : IProjectTaskRepository
             query = query.Where(t => t.AssigneeId == filter.AssigneeId.Value);
         if (filter.AuthorId.HasValue)
             query = query.Where(t => t.AuthorId == filter.AuthorId.Value);
+        if (filter.ProjectManagerId.HasValue)
+            query = query.Where(t => t.Project!.ProjectManagerId == filter.ProjectManagerId.Value);
+        if (filter.ParticipantEmployeeId.HasValue)
+        {
+            var empId = filter.ParticipantEmployeeId.Value;
+            query = query.Where(t =>
+                t.Project!.ProjectManagerId == empId
+                || t.Project!.Employees.Any(e => e.Id == empId));
+        }
         if (filter.Status.HasValue)
             query = query.Where(t => t.Status == filter.Status.Value);
         if (filter.MinPriority.HasValue)
