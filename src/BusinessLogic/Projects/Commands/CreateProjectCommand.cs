@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using BusinessLogic.Common;
 using BusinessLogic.Employees;
+using BusinessLogic.Identity;
 using MediatR;
 
 namespace BusinessLogic.Projects.Commands;
@@ -43,15 +44,24 @@ public record CreateProjectResponse
 
 public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand, CreateProjectResponse>
 {
+    /// <summary>
+    /// Only users carrying one of these roles may be appointed as a project
+    /// manager — a plain Сотрудник is not eligible.
+    /// </summary>
+    private static readonly string[] EligiblePmRoles = { Roles.Director, Roles.ProjectManager };
+
     private readonly IProjectRepository _projectRepository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IUserAccountService _userAccountService;
 
     public CreateProjectCommandHandler(
         IProjectRepository projectRepository,
-        IEmployeeRepository employeeRepository)
+        IEmployeeRepository employeeRepository,
+        IUserAccountService userAccountService)
     {
         _projectRepository = projectRepository;
         _employeeRepository = employeeRepository;
+        _userAccountService = userAccountService;
     }
 
     public async Task<CreateProjectResponse> Handle(CreateProjectCommand request, CancellationToken ct)
@@ -63,6 +73,14 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
         // that way you can't build a Project pointing at a phantom manager.
         var projectManager = await _employeeRepository.GetEmployeeByIdAsync(data.ProjectManagerId, ct)
             ?? throw new EntityNotFoundException(nameof(Employee), data.ProjectManagerId);
+
+        // Block a plain Сотрудник from being promoted to PM through the form.
+        // The UI's autocomplete already filters by role, but a hand-crafted
+        // POST would otherwise sneak around it.
+        if (!await _userAccountService.IsEmployeeInAnyRoleAsync(projectManager.Id, EligiblePmRoles, ct))
+            throw new DomainValidationException(
+                "Selected employee cannot be a project manager — they must have the " +
+                "Director or ProjectManager role.");
 
         // PM and participants are disjoint sets by domain invariant; quietly
         // drop the PM from the participant list rather than failing the

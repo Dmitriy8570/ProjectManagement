@@ -1,11 +1,13 @@
 using BusinessLogic.Documents;
 using BusinessLogic.Employees;
 using BusinessLogic.Projects;
+using DataAccess.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -32,6 +34,10 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Employee>()
             .Navigation(e => e.Projects)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        modelBuilder.Entity<Project>()
+            .Navigation(p => p.Documents)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

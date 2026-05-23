@@ -1,21 +1,39 @@
 using BusinessLogic.Common;
 using BusinessLogic.Documents.Commands;
 using BusinessLogic.Documents.Queries;
+using BusinessLogic.Identity;
 using BusinessLogic.Projects;
 using BusinessLogic.Projects.Commands;
 using BusinessLogic.Projects.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectManagement.Web.ViewModels.Projects;
 
 namespace ProjectManagement.Web.Controllers;
 
 [Route("projects")]
+[Authorize]
+// Role rules (per spec):
+//   Руководитель      — full access to every project.
+//   Менеджер проекта  — sees and edits ONLY projects where they are the PM;
+//                       can manage that project's participants and documents.
+//   Сотрудник         — sees ONLY projects they participate in; read-only.
+// Index filters the list at the query level (no flash of forbidden rows);
+// write-side actions add a resource check after loading the project so URL
+// guessing also returns 403.
 public class ProjectsController : Controller
 {
-    private readonly IMediator _mediator;
+    private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 
-    public ProjectsController(IMediator mediator) => _mediator = mediator;
+    private readonly IMediator _mediator;
+    private readonly ICurrentUserService _currentUser;
+
+    public ProjectsController(IMediator mediator, ICurrentUserService currentUser)
+    {
+        _mediator = mediator;
+        _currentUser = currentUser;
+    }
 
     [HttpGet("")]
     [Route("~/")]
@@ -37,6 +55,21 @@ public class ProjectsController : Controller
             PageSize      = vm.PageSize
         };
 
+        // Director sees everything; PM sees managed-by-self; Employee sees
+        // participated-in. ProjectListFilter ANDs the two id criteria, so
+        // pick at most one — multi-role users prefer PM (broader rights).
+        if (!User.IsInRole(Roles.Director))
+        {
+            var empId = _currentUser.EmployeeId;
+            if (empId is null)
+                return Forbid();
+
+            if (User.IsInRole(Roles.ProjectManager))
+                filter = filter with { ProjectManagerId = empId };
+            else
+                filter = filter with { ParticipantEmployeeId = empId };
+        }
+
         var result = await _mediator.Send(new GetProjectsQuery { Filter = filter }, ct);
         vm.Items = result.Items;
         vm.TotalCount = result.TotalCount;
@@ -51,8 +84,13 @@ public class ProjectsController : Controller
             var projectTask  = _mediator.Send(new GetProjectByIdQuery { Id = id }, ct);
             var documentsTask = _mediator.Send(new GetProjectDocumentsQuery { ProjectId = id }, ct);
             await Task.WhenAll(projectTask, documentsTask);
+
+            var project = projectTask.Result;
+            if (!CanView(project))
+                return Forbid();
+
             ViewBag.Documents = documentsTask.Result;
-            return View(projectTask.Result);
+            return View(project);
         }
         catch (EntityNotFoundException)
         {
@@ -61,12 +99,16 @@ public class ProjectsController : Controller
     }
 
     [HttpPost("{id:int}/documents/upload")]
+    [Authorize(Roles = DirectorOrPm)]
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(52_428_800)]
     [RequestFormLimits(MultipartBodyLengthLimit = 52_428_800)]
     public async Task<IActionResult> UploadDocument(
         int id, List<IFormFile>? files, CancellationToken ct)
     {
+        if (!await CanManageAsync(id, ct))
+            return Forbid();
+
         var validFiles = files?.Where(f => f.Length > 0).ToList();
         if (validFiles is not { Count: > 0 })
         {
@@ -111,6 +153,11 @@ public class ProjectsController : Controller
     [HttpGet("{id:int}/documents/{docId:int}/download")]
     public async Task<IActionResult> DownloadDocument(int id, int docId, CancellationToken ct)
     {
+        // Download follows the same view-side rule as Detail — participants
+        // can pull files off projects they belong to.
+        if (!await CanViewAsync(id, ct))
+            return Forbid();
+
         try
         {
             var result = await _mediator.Send(
@@ -124,9 +171,13 @@ public class ProjectsController : Controller
     }
 
     [HttpPost("{id:int}/documents/{docId:int}/delete")]
+    [Authorize(Roles = DirectorOrPm)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteDocument(int id, int docId, CancellationToken ct)
     {
+        if (!await CanManageAsync(id, ct))
+            return Forbid();
+
         try
         {
             await _mediator.Send(new DeleteDocumentCommand { DocumentId = docId }, ct);
@@ -141,6 +192,7 @@ public class ProjectsController : Controller
     }
 
     [HttpGet("create")]
+    [Authorize(Roles = Roles.Director)]
     public IActionResult Create()
     {
         return View(new CreateProjectViewModel
@@ -151,6 +203,7 @@ public class ProjectsController : Controller
     }
 
     [HttpPost("create")]
+    [Authorize(Roles = Roles.Director)]
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(52_428_800)]
     [RequestFormLimits(MultipartBodyLengthLimit = 52_428_800)]
@@ -216,11 +269,15 @@ public class ProjectsController : Controller
     }
 
     [HttpGet("{id:int}/edit")]
+    [Authorize(Roles = DirectorOrPm)]
     public async Task<IActionResult> Edit(int id, CancellationToken ct)
     {
         try
         {
             var project = await _mediator.Send(new GetProjectByIdQuery { Id = id }, ct);
+            if (!CanManage(project))
+                return Forbid();
+
             return View(new EditProjectViewModel
             {
                 Id = id,
@@ -241,9 +298,13 @@ public class ProjectsController : Controller
     }
 
     [HttpPost("{id:int}/edit")]
+    [Authorize(Roles = DirectorOrPm)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, EditProjectViewModel model, CancellationToken ct)
     {
+        if (!await CanManageAsync(id, ct))
+            return Forbid();
+
         if (!ModelState.IsValid)
             return View(model);
 
@@ -280,6 +341,7 @@ public class ProjectsController : Controller
     }
 
     [HttpPost("{id:int}/delete")]
+    [Authorize(Roles = Roles.Director)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
@@ -305,14 +367,32 @@ public class ProjectsController : Controller
             PageSize   = 10,
             SortBy     = ProjectSortBy.Name
         };
+
+        // Mirror the Index filter so the autocomplete dropdown never offers
+        // a project the user wouldn't be allowed to open.
+        if (!User.IsInRole(Roles.Director))
+        {
+            var empId = _currentUser.EmployeeId;
+            if (empId is null)
+                return Forbid();
+
+            filter = User.IsInRole(Roles.ProjectManager)
+                ? filter with { ProjectManagerId = empId }
+                : filter with { ParticipantEmployeeId = empId };
+        }
+
         var result = await _mediator.Send(new GetProjectsQuery { Filter = filter }, ct);
         return Json(result.Items.Select(p => new { p.Id, p.Name }));
     }
 
     [HttpPost("{id:int}/assign")]
+    [Authorize(Roles = DirectorOrPm)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Assign(int id, int employeeId, CancellationToken ct)
     {
+        if (!await CanManageAsync(id, ct))
+            return Forbid();
+
         try
         {
             await _mediator.Send(new AssignEmployeeToProjectCommand
@@ -333,9 +413,13 @@ public class ProjectsController : Controller
     }
 
     [HttpPost("{id:int}/unassign")]
+    [Authorize(Roles = DirectorOrPm)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Unassign(int id, int employeeId, CancellationToken ct)
     {
+        if (!await CanManageAsync(id, ct))
+            return Forbid();
+
         try
         {
             await _mediator.Send(new UnassignEmployeeFromProjectCommand
@@ -353,5 +437,61 @@ public class ProjectsController : Controller
             TempData["Error"] = ex.Message;
         }
         return RedirectToAction(nameof(Detail), new { id });
+    }
+
+    // ── Authorization helpers ────────────────────────────────────────────
+    // Director: bypass. Other roles must be linked to the project either as
+    // PM (CanManage) or as PM/participant (CanView).
+
+    private bool CanView(ProjectDto project)
+    {
+        if (User.IsInRole(Roles.Director))
+            return true;
+
+        var empId = _currentUser.EmployeeId;
+        if (empId is null)
+            return false;
+
+        return project.ProjectManager.Id == empId
+            || project.Employees.Any(e => e.Id == empId);
+    }
+
+    private bool CanManage(ProjectDto project)
+    {
+        if (User.IsInRole(Roles.Director))
+            return true;
+
+        var empId = _currentUser.EmployeeId;
+        return empId is not null && project.ProjectManager.Id == empId;
+    }
+
+    private async Task<bool> CanViewAsync(int projectId, CancellationToken ct)
+    {
+        if (User.IsInRole(Roles.Director))
+            return true;
+        try
+        {
+            var project = await _mediator.Send(new GetProjectByIdQuery { Id = projectId }, ct);
+            return CanView(project);
+        }
+        catch (EntityNotFoundException)
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> CanManageAsync(int projectId, CancellationToken ct)
+    {
+        if (User.IsInRole(Roles.Director))
+            return true;
+        try
+        {
+            var project = await _mediator.Send(new GetProjectByIdQuery { Id = projectId }, ct);
+            return CanManage(project);
+        }
+        catch (EntityNotFoundException)
+        {
+            return false;
+        }
     }
 }

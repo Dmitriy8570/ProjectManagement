@@ -16,38 +16,33 @@ public class GetEmployeeByIdQueryHandlerTests
         _handler = new GetEmployeeByIdQueryHandler(_repository);
     }
 
-    private static Employee CreateEmployee(
-        int id = 1,
-        string firstName = "John",
-        string lastName = "Doe",
-        string patronymic = "Jr",
-        string email = "john@example.com")
-    {
-        var employee = new Employee(firstName, lastName, patronymic, email);
-        typeof(Employee).GetProperty("Id")!.SetValue(employee, id);
-        return employee;
-    }
-
     [Fact]
-    public async Task Handle_EmployeeFound_ReturnsMappedDto()
+    public async Task Handle_EmployeeFound_ReturnsDto()
     {
-        var employee = CreateEmployee(id: 3, firstName: "Alice", lastName: "Smith", patronymic: "K", email: "alice@example.com");
-        _repository.GetEmployeeByIdAsync(3, Arg.Any<CancellationToken>()).Returns(employee);
+        var dto = new EmployeeDto
+        {
+            Id = 3,
+            FirstName = "Alice",
+            LastName = "Smith",
+            Patronymic = "K",
+            Email = "alice@example.com",
+        };
+        _repository.GetEmployeeDtoByIdAsync(3, Arg.Any<CancellationToken>()).Returns(dto);
         var query = new GetEmployeeByIdQuery { Id = 3 };
 
-        var dto = await _handler.Handle(query, CancellationToken.None);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-        Assert.Equal(3, dto.Id);
-        Assert.Equal("Alice", dto.FirstName);
-        Assert.Equal("Smith", dto.LastName);
-        Assert.Equal("K", dto.Patronymic);
-        Assert.Equal("alice@example.com", dto.Email);
+        Assert.Equal(3, result.Id);
+        Assert.Equal("Alice", result.FirstName);
+        Assert.Equal("Smith", result.LastName);
+        Assert.Equal("K", result.Patronymic);
+        Assert.Equal("alice@example.com", result.Email);
     }
 
     [Fact]
     public async Task Handle_EmployeeNotFound_ThrowsEntityNotFoundException()
     {
-        _repository.GetEmployeeByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Employee?)null);
+        _repository.GetEmployeeDtoByIdAsync(99, Arg.Any<CancellationToken>()).Returns((EmployeeDto?)null);
         var query = new GetEmployeeByIdQuery { Id = 99 };
 
         await Assert.ThrowsAsync<EntityNotFoundException>(

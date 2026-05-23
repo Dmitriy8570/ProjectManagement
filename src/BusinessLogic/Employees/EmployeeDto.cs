@@ -6,14 +6,21 @@ public record EmployeeDto
     public string FirstName { get; init; } = default!;
     public string LastName { get; init; } = default!;
     public string Patronymic { get; init; } = default!;
-    public string Email { get; init; } = default!;
+
+    /// <summary>
+    /// Sourced from the linked Identity user account (ApplicationUser.Email).
+    /// Empty when the projection didn't request it (e.g. employees nested
+    /// inside a ProjectDto — projects don't show employee emails).
+    /// </summary>
+    public string Email { get; init; } = string.Empty;
 
     public string FullName => $"{LastName} {FirstName} {Patronymic}".Trim();
 }
 
 /// <summary>
-/// Hand-written entity → DTO projection. Lightweight enough that pulling in
-/// AutoMapper would cost more than it would save.
+/// Hand-written entity → DTO projection for cases where Email isn't needed
+/// (project-nested employees). Repository methods that need Email project
+/// the DTO directly via a join — they don't go through this helper.
 /// </summary>
 internal static class EmployeeMapping
 {
@@ -22,7 +29,6 @@ internal static class EmployeeMapping
         Id = employee.Id,
         FirstName = employee.FirstName,
         LastName = employee.LastName,
-        Patronymic = employee.Patronymic,
-        Email = employee.Email
+        Patronymic = employee.Patronymic
     };
 }

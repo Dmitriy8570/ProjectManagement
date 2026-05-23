@@ -22,11 +22,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(x => x.Email)
-            .HasMaxLength(100)
-            .IsRequired();
-
-        builder.HasIndex(x => x.Email)
-            .IsUnique();
+        // Email is configured on ApplicationUser (Identity) — see
+        // IdentityUserConfiguration. It is not a column on Employees.
     }
 }

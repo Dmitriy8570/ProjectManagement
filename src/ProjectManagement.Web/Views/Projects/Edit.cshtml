@@ -106,12 +106,16 @@
 @section Scripts {
     <script src="~/js/employee-autocomplete.js" asp-append-version="true"></script>
     <script>
+        // Restrict the dropdown to PM-eligible roles — same rule as on
+        // Create. Server-side validation in EditProjectCommandHandler is
+        // the ultimate guard.
         initSingleAutocomplete({
             searchInput:   document.getElementById('pm-search'),
             dropdown:      document.getElementById('pm-dropdown'),
             hiddenInput:   document.getElementById('pm-id'),
             chipContainer: document.getElementById('pm-chip-container'),
             searchUrl:     '/employees/search',
+            extraParams:   { roles: 'Director,ProjectManager' },
             initialId:     @Model.ProjectManagerId,
             initialName:   '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjectManagerName ?? "").Trim('"'))'
         });

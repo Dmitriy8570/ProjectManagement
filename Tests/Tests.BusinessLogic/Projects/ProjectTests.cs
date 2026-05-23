@@ -9,9 +9,9 @@ public class ProjectTests
     private static readonly DateTime DefaultStart = new(2024, 1, 1);
     private static readonly DateTime DefaultEnd = new(2024, 12, 31);
 
-    private static Employee CreateEmployee(int id = 0, string email = "person@example.com")
+    private static Employee CreateEmployee(int id = 0)
     {
-        var employee = new Employee("First", "Last", "Patronymic", email);
+        var employee = new Employee("First", "Last", "Patronymic");
         if (id != 0)
             typeof(Employee).GetProperty(nameof(Employee.Id))!.SetValue(employee, id);
         return employee;
@@ -239,7 +239,7 @@ public class ProjectTests
     public void Update_AppliesEachProvidedField()
     {
         var project = CreateProject(projectManager: CreateEmployee(id: 1));
-        var newPm = CreateEmployee(id: 2, email: "new.pm@example.com");
+        var newPm = CreateEmployee(id: 2);
 
         project.Update(
             name: "New Name",
@@ -298,7 +298,7 @@ public class ProjectTests
     public void Update_WhenNewProjectManagerIsCurrentParticipant_SilentlyRemovesFromParticipants()
     {
         var project = CreateProject(projectManager: CreateEmployee(id: 1));
-        var soonToBePm = CreateEmployee(id: 2, email: "future.pm@example.com");
+        var soonToBePm = CreateEmployee(id: 2);
         project.AddEmployee(soonToBePm);
 
         project.Update(projectManager: soonToBePm);

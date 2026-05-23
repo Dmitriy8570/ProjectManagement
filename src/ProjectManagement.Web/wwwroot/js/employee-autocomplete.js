@@ -31,6 +31,20 @@ function closeOnOutsideClick(searchInput, dropdown) {
     });
 }
 
+// ── Shared URL builder ────────────────────────────────────────────────────────
+
+function buildSearchUrl(base, term, limit, extra) {
+    const usp = new URLSearchParams();
+    usp.set('term', term);
+    usp.set('limit', String(limit));
+    if (extra) {
+        for (const [k, v] of Object.entries(extra)) {
+            if (v != null && v !== '') usp.set(k, v);
+        }
+    }
+    return `${base}?${usp.toString()}`;
+}
+
 // ── Single-selection autocomplete (PM picker — chip based) ────────────────────
 //
 // Options:
@@ -41,9 +55,13 @@ function closeOnOutsideClick(searchInput, dropdown) {
 //   searchUrl      – URL prefix  e.g. '/employees/search'
 //   initialId      – pre-selected ID (0 = none)
 //   initialName    – pre-selected display name
+//   extraParams    – optional object of extra query-string params, e.g.
+//                    { roles: 'Director,ProjectManager' } to restrict the
+//                    dropdown to those roles on the server.
 
 function initSingleAutocomplete(opts) {
     const { searchInput, dropdown, hiddenInput, chipContainer, searchUrl } = opts;
+    const extraParams = opts.extraParams || null;
     let debounce;
 
     function renderChip(name) {
@@ -96,7 +114,7 @@ function initSingleAutocomplete(opts) {
 
     async function fetchAndRender(term) {
         try {
-            const res = await fetch(`${searchUrl}?term=${encodeURIComponent(term)}&limit=10`);
+            const res = await fetch(buildSearchUrl(searchUrl, term, 10, extraParams));
             const employees = await res.json();
             dropdown.innerHTML = '';
             dropdown.appendChild(buildDropdown(employees, emp => selectEmployee(emp.id, emp.fullName)));

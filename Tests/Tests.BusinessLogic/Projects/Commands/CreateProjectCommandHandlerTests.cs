@@ -1,5 +1,6 @@
 using BusinessLogic.Common;
 using BusinessLogic.Employees;
+using BusinessLogic.Identity;
 using BusinessLogic.Projects;
 using BusinessLogic.Projects.Commands;
 using NSubstitute;
@@ -10,6 +11,7 @@ public class CreateProjectCommandHandlerTests
 {
     private readonly IProjectRepository _projectRepo;
     private readonly IEmployeeRepository _employeeRepo;
+    private readonly IUserAccountService _accounts;
     private readonly CreateProjectCommandHandler _handler;
 
     private static readonly DateTime DefaultStart = new(2024, 1, 1);
@@ -19,12 +21,19 @@ public class CreateProjectCommandHandlerTests
     {
         _projectRepo = Substitute.For<IProjectRepository>();
         _employeeRepo = Substitute.For<IEmployeeRepository>();
-        _handler = new CreateProjectCommandHandler(_projectRepo, _employeeRepo);
+        _accounts = Substitute.For<IUserAccountService>();
+        _handler = new CreateProjectCommandHandler(_projectRepo, _employeeRepo, _accounts);
+
+        // Default: PM-eligibility check passes. Tests that exercise the
+        // negative case override this explicitly.
+        _accounts.IsEmployeeInAnyRoleAsync(
+                Arg.Any<int>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(true);
     }
 
-    private static Employee CreateEmployee(int id, string email = "person@example.com")
+    private static Employee CreateEmployee(int id)
     {
-        var employee = new Employee("First", "Last", "Patronymic", email);
+        var employee = new Employee("First", "Last", "Patronymic");
         typeof(Employee).GetProperty(nameof(Employee.Id))!.SetValue(employee, id);
         return employee;
     }
@@ -84,6 +93,20 @@ public class CreateProjectCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_PmNotInEligibleRole_ThrowsDomainValidationException()
+    {
+        var pm = CreateEmployee(id: 1);
+        _employeeRepo.GetEmployeeByIdAsync(1, Arg.Any<CancellationToken>()).Returns(pm);
+        _accounts.IsEmployeeInAnyRoleAsync(1, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        await Assert.ThrowsAsync<DomainValidationException>(
+            () => _handler.Handle(CreateCommand(), CancellationToken.None));
+
+        await _projectRepo.DidNotReceive().AddProjectAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_ParticipantNotFound_ThrowsEntityNotFoundException()
     {
         var pm = CreateEmployee(id: 1);
@@ -102,7 +125,7 @@ public class CreateProjectCommandHandlerTests
     public async Task Handle_PmIdIncludedInEmployeeIds_DroppedFromParticipantQuery()
     {
         var pm = CreateEmployee(id: 1);
-        var participant = CreateEmployee(id: 2, email: "part@example.com");
+        var participant = CreateEmployee(id: 2);
         _employeeRepo.GetEmployeeByIdAsync(1, Arg.Any<CancellationToken>()).Returns(pm);
         _employeeRepo.GetEmployeesByIdsAsync(Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>())
             .Returns(new List<Employee> { participant });
@@ -118,7 +141,7 @@ public class CreateProjectCommandHandlerTests
     public async Task Handle_DuplicateParticipantIds_DeduplicatedBeforeQuery()
     {
         var pm = CreateEmployee(id: 1);
-        var participant = CreateEmployee(id: 2, email: "part@example.com");
+        var participant = CreateEmployee(id: 2);
         _employeeRepo.GetEmployeeByIdAsync(1, Arg.Any<CancellationToken>()).Returns(pm);
         _employeeRepo.GetEmployeesByIdsAsync(Arg.Any<IReadOnlyCollection<int>>(), Arg.Any<CancellationToken>())
             .Returns(new List<Employee> { participant });

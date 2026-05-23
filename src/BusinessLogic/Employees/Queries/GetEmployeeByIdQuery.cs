@@ -19,9 +19,7 @@ public class GetEmployeeByIdQueryHandler : IRequestHandler<GetEmployeeByIdQuery,
 
     public async Task<EmployeeDto> Handle(GetEmployeeByIdQuery request, CancellationToken ct)
     {
-        var employee = await _employeeRepository.GetEmployeeByIdAsync(request.Id, ct)
+        return await _employeeRepository.GetEmployeeDtoByIdAsync(request.Id, ct)
             ?? throw new EntityNotFoundException(nameof(Employee), request.Id);
-
-        return employee.ToDto();
     }
 }

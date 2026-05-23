@@ -1,3 +1,17 @@
+// ── Role constants ────────────────────────────────────────────────────────────
+// Must stay in sync with BusinessLogic.Identity.Roles on the server. Defined
+// as a `const` map (not an enum) so the strings can flow directly into API
+// calls / role checks without conversion.
+export const Roles = {
+  Director: 'Director',
+  ProjectManager: 'ProjectManager',
+  Employee: 'Employee',
+} as const
+
+export type RoleName = typeof Roles[keyof typeof Roles]
+
+// ── Domain DTOs ───────────────────────────────────────────────────────────────
+
 export interface EmployeeDto {
   id: number
   firstName: string
@@ -63,6 +77,10 @@ export interface CreateEmployeeRequest {
   lastName: string
   patronymic?: string
   email: string
+  /** Initial password for the linked Identity account — validated by the server's password policy. */
+  password: string
+  /** One of `Roles.*`. Defaults to plain Employee on the server when omitted. */
+  role?: RoleName
 }
 
 export interface EditEmployeeRequest {
@@ -84,4 +102,19 @@ export interface ProjectDocumentDto {
 export interface EmployeeProjectsDto {
   managedProjects: ProjectDto[]
   participantProjects: ProjectDto[]
+}
+
+// ── Auth DTOs ─────────────────────────────────────────────────────────────────
+
+export interface CurrentUserDto {
+  id: string
+  email: string
+  employeeId: number
+  roles: RoleName[]
+}
+
+export interface LoginResponse {
+  token: string
+  expiresAtUtc: string
+  user: CurrentUserDto
 }
