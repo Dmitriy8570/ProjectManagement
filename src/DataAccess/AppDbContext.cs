@@ -35,9 +35,5 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Employee>()
             .Navigation(e => e.Projects)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
-
-        modelBuilder.Entity<Project>()
-            .Navigation(p => p.Documents)
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

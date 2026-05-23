@@ -9,8 +9,8 @@ public class EmployeeRepositoryTests : DatabaseTestBase
 {
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private Employee Make(string first, string last, string patronymic = "X", string? email = null) =>
-        new(first, last, patronymic, email ?? $"{first.ToLower()}.{last.ToLower()}@x.com");
+    private Employee Make(string first, string last, string patronymic = "X") =>
+        new(first, last, patronymic);
 
     private async Task<Employee> AddAsync(Employee e)
     {
