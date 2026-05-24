@@ -3,7 +3,7 @@ using BusinessLogic.Projects;
 
 namespace BusinessLogic.Documents;
 
-public class ProjectDocument
+public sealed class ProjectDocument
 {
     public int Id { get; private set; }
     public int ProjectId { get; private set; }

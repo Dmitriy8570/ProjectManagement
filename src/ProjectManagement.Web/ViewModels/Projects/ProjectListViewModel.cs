@@ -2,7 +2,7 @@ using BusinessLogic.Projects;
 
 namespace ProjectManagement.Web.ViewModels.Projects;
 
-public class ProjectListViewModel
+public sealed class ProjectListViewModel
 {
     public string? NameSearch { get; set; }
     public DateTime? StartDateFrom { get; set; }

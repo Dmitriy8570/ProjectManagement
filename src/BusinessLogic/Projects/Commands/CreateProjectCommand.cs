@@ -25,7 +25,7 @@ public record CreateProjectRequest
 
     // Members are optional: a freshly-created project may start with just a
     // project manager and have participants assigned later.
-    public List<int> EmployeeIds { get; init; } = new();
+    public List<int> EmployeeIds { get; init; } = [];
 
     [Range(0, int.MaxValue)]
     public int Priority { get; init; }
@@ -41,7 +41,7 @@ public record CreateProjectResponse
     public int Id { get; init; }
 }
 
-public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand, CreateProjectResponse>
+public sealed class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand, CreateProjectResponse>
 {
     private readonly IProjectRepository _projectRepository;
     private readonly IEmployeeRepository _employeeRepository;

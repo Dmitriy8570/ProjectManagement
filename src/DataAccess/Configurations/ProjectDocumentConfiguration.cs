@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DataAccess.Configurations;
 
-public class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocument>
+public sealed class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocument>
 {
     public void Configure(EntityTypeBuilder<ProjectDocument> builder)
     {

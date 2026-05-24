@@ -18,7 +18,7 @@ public record UploadDocumentCommand : IRequest<ProjectDocumentDto>
     public Stream Content { get; init; } = Stream.Null;
 }
 
-public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentCommand, ProjectDocumentDto>
+public sealed class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentCommand, ProjectDocumentDto>
 {
     private static readonly long MaxFileSizeBytes = 50L * 1024 * 1024; // 50 MB
 

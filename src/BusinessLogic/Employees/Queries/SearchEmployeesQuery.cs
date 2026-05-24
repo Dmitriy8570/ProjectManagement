@@ -14,7 +14,7 @@ public record SearchEmployeesQuery : IRequest<IReadOnlyList<EmployeeDto>>
     public int Limit { get; init; } = 20;
 }
 
-public class SearchEmployeesQueryHandler
+public sealed class SearchEmployeesQueryHandler
     : IRequestHandler<SearchEmployeesQuery, IReadOnlyList<EmployeeDto>>
 {
     private const int MaxLimit = 100;

@@ -8,7 +8,7 @@ public record GetProjectByIdQuery : IRequest<ProjectDto>
     public int Id { get; init; }
 }
 
-public class GetProjectByIdQueryHandler : IRequestHandler<GetProjectByIdQuery, ProjectDto>
+public sealed class GetProjectByIdQueryHandler : IRequestHandler<GetProjectByIdQuery, ProjectDto>
 {
     private readonly IProjectRepository _projectRepository;
 

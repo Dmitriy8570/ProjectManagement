@@ -10,7 +10,7 @@ using ProjectManagement.Web.ViewModels.Employees;
 namespace ProjectManagement.Web.Controllers;
 
 [Route("employees")]
-public class EmployeesController : Controller
+public sealed class EmployeesController : Controller
 {
     private readonly IMediator _mediator;
 

@@ -29,7 +29,7 @@ public record CreateEmployeeResponse
     public int Id { get; init; }
 }
 
-public class CreateEmployeeCommandHandler
+public sealed class CreateEmployeeCommandHandler
     : IRequestHandler<CreateEmployeeCommand, CreateEmployeeResponse>
 {
     private readonly IEmployeeRepository _employeeRepository;

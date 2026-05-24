@@ -15,7 +15,7 @@ public record DocumentDownloadResult
     public string ContentType { get; init; } = default!;
 }
 
-public class GetDocumentDownloadQueryHandler
+public sealed class GetDocumentDownloadQueryHandler
     : IRequestHandler<GetDocumentDownloadQuery, DocumentDownloadResult>
 {
     private readonly IDocumentRepository _documents;

@@ -10,7 +10,7 @@ namespace ProjectManagement.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class ProjectsController: ControllerBase
+public sealed class ProjectsController : ControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -71,7 +71,7 @@ public class ProjectsController: ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AssignEmployeeToProject([FromBody] AssignEmployeeToProjectRequest request, CancellationToken ct)
     {
-        var command = new AssignEmployeeToProjectCommand{ Data = request };
+        var command = new AssignEmployeeToProjectCommand { Data = request };
         await _mediator.Send(command, ct);
         return NoContent();
     }
@@ -81,7 +81,7 @@ public class ProjectsController: ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UnassignEmployeeFromProject([FromBody] UnassignEmployeeFromProjectRequest request, CancellationToken ct)
     {
-        var command = new UnassignEmployeeFromProjectCommand{ Data = request };
+        var command = new UnassignEmployeeFromProjectCommand { Data = request };
         await _mediator.Send(command, ct);
         return NoContent();
     }

@@ -8,7 +8,7 @@ public record GetEmployeeByIdQuery : IRequest<EmployeeDto>
     public int Id { get; init; }
 }
 
-public class GetEmployeeByIdQueryHandler : IRequestHandler<GetEmployeeByIdQuery, EmployeeDto>
+public sealed class GetEmployeeByIdQueryHandler : IRequestHandler<GetEmployeeByIdQuery, EmployeeDto>
 {
     private readonly IEmployeeRepository _employeeRepository;
 

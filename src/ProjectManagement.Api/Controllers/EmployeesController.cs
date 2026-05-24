@@ -10,15 +10,15 @@ namespace ProjectManagement.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class EmployeesController : ControllerBase
+public sealed class EmployeesController : ControllerBase
 {
     private readonly IMediator _mediator;
 
     public EmployeesController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(EmployeeDto),StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails),StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(EmployeeDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EmployeeDto>> GetEmployeeById(int id, CancellationToken ct)
     {
         var query = new GetEmployeeByIdQuery { Id = id };
@@ -69,9 +69,12 @@ public class EmployeesController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<EmployeeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<IReadOnlyList<EmployeeDto>>> ListEmployees([FromQuery]string? term, [FromQuery]int limit, CancellationToken ct)
+    public async Task<ActionResult<IReadOnlyList<EmployeeDto>>> ListEmployees(
+        [FromQuery] string? term,
+        [FromQuery] int limit,
+        CancellationToken ct)
     {
-        var query = new SearchEmployeesQuery { Term = term, Limit = limit };    
+        var query = new SearchEmployeesQuery { Term = term, Limit = limit };
         var result = await _mediator.Send(query, ct);
         return Ok(result);
     }

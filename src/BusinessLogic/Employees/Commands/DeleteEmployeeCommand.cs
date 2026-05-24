@@ -8,7 +8,7 @@ public record DeleteEmployeeCommand : IRequest
     public int Id { get; init; }
 }
 
-public class DeleteEmployeeCommandHandler : IRequestHandler<DeleteEmployeeCommand>
+public sealed class DeleteEmployeeCommandHandler : IRequestHandler<DeleteEmployeeCommand>
 {
     private readonly IEmployeeRepository _employeeRepository;
 

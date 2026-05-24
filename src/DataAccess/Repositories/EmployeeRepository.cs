@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repositories;
 
-public class EmployeeRepository : IEmployeeRepository
+public sealed class EmployeeRepository : IEmployeeRepository
 {
     private readonly AppDbContext _db;
 
@@ -48,7 +48,7 @@ public class EmployeeRepository : IEmployeeRepository
     public async Task<IReadOnlyList<Employee>> GetEmployeesByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken ct)
     {
         if (ids.Count == 0)
-            return Array.Empty<Employee>();
+            return [];
 
         return await _db.Employees
             .Where(e => ids.Contains(e.Id))
