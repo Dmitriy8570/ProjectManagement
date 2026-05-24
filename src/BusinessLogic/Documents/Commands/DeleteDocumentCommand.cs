@@ -8,7 +8,7 @@ public record DeleteDocumentCommand : IRequest
     public int DocumentId { get; init; }
 }
 
-public class DeleteDocumentCommandHandler : IRequestHandler<DeleteDocumentCommand>
+public sealed class DeleteDocumentCommandHandler : IRequestHandler<DeleteDocumentCommand>
 {
     private readonly IDocumentRepository _documents;
     private readonly IFileStorage _storage;

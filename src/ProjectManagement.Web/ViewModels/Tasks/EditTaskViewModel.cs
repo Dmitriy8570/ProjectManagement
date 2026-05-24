@@ -4,7 +4,7 @@ using BusinessLogic.Tasks;
 
 namespace ProjectManagement.Web.ViewModels.Tasks;
 
-public class EditTaskViewModel
+public sealed class EditTaskViewModel
 {
     public int Id { get; set; }
 

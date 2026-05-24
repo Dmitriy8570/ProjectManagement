@@ -14,7 +14,7 @@ public record UnassignEmployeeFromProjectCommand : IRequest
     public UnassignEmployeeFromProjectRequest Data { get; init; } = default!;
 }
 
-public class UnassignEmployeeFromProjectCommandHandler
+public sealed class UnassignEmployeeFromProjectCommandHandler
     : IRequestHandler<UnassignEmployeeFromProjectCommand>
 {
     private readonly IProjectRepository _projectRepository;

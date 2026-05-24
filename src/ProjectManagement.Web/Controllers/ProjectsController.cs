@@ -11,7 +11,7 @@ using ProjectManagement.Web.ViewModels.Projects;
 namespace ProjectManagement.Web.Controllers;
 
 [Route("projects")]
-public class ProjectsController : Controller
+public sealed class ProjectsController : Controller
 {
     private readonly IMediator _mediator;
 
@@ -74,7 +74,7 @@ public class ProjectsController : Controller
             return RedirectToAction(nameof(Detail), new { id });
         }
 
-        var errors = new List<string>();
+        List<string> errors = [];
         var uploaded = 0;
 
         foreach (var file in validFiles)

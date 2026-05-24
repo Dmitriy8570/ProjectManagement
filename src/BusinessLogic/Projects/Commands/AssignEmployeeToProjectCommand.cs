@@ -15,7 +15,7 @@ public record AssignEmployeeToProjectCommand : IRequest
     public AssignEmployeeToProjectRequest Data { get; init; } = default!;
 }
 
-public class AssignEmployeeToProjectCommandHandler : IRequestHandler<AssignEmployeeToProjectCommand>
+public sealed class AssignEmployeeToProjectCommandHandler : IRequestHandler<AssignEmployeeToProjectCommand>
 {
     private readonly IProjectRepository _projectRepository;
     private readonly IEmployeeRepository _employeeRepository;

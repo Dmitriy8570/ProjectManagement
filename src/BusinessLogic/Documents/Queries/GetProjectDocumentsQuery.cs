@@ -7,7 +7,7 @@ public record GetProjectDocumentsQuery : IRequest<IReadOnlyList<ProjectDocumentD
     public int ProjectId { get; init; }
 }
 
-public class GetProjectDocumentsQueryHandler
+public sealed class GetProjectDocumentsQueryHandler
     : IRequestHandler<GetProjectDocumentsQuery, IReadOnlyList<ProjectDocumentDto>>
 {
     private readonly IDocumentRepository _documents;

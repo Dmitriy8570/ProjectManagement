@@ -13,7 +13,7 @@ public record ProjectDto
     public int Priority { get; init; }
 
     public EmployeeDto ProjectManager { get; init; } = default!;
-    public IReadOnlyList<EmployeeDto> Employees { get; init; } = Array.Empty<EmployeeDto>();
+    public IReadOnlyList<EmployeeDto> Employees { get; init; } = [];
 }
 
 internal static class ProjectMapping

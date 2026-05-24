@@ -10,7 +10,6 @@ namespace BusinessLogic.Employees.Commands;
 /// </summary>
 public record EditEmployeeRequest
 {
-
     [MaxLength(100)]
     public string? FirstName { get; init; }
 
@@ -35,7 +34,7 @@ public record EditEmployeeResponse
     public int Id { get; init; }
 }
 
-public class EditEmployeeCommandHandler : IRequestHandler<EditEmployeeCommand, EditEmployeeResponse>
+public sealed class EditEmployeeCommandHandler : IRequestHandler<EditEmployeeCommand, EditEmployeeResponse>
 {
     private readonly IEmployeeRepository _employeeRepository;
 

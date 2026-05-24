@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagement.Web.ViewModels.Projects;
 
-public class CreateProjectViewModel
+public sealed class CreateProjectViewModel
 {
     // Step 1: Basic info
     [Required(ErrorMessage = "Project name is required")]

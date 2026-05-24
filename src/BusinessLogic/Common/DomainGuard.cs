@@ -60,7 +60,6 @@ internal static class DomainGuard
         return value;
     }
 
-
     public static (DateTime Start, DateTime End) DateRange(
         DateTime start, DateTime end, string startField, string endField)
     {

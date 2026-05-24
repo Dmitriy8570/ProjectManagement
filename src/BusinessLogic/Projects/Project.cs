@@ -4,7 +4,7 @@ using BusinessLogic.Employees;
 
 namespace BusinessLogic.Projects;
 
-public class Project
+public sealed class Project
 {
     public int Id { get; private set; }
     public string Name { get; private set; } = default!;
@@ -20,9 +20,8 @@ public class Project
     // Participants are stored in a private list and exposed as a read-only
     // view so callers must go through AddEmployee / RemoveEmployee — that
     // keeps the "PM is not also a participant" invariant enforceable.
-    private readonly List<Employee> _employees = new();
+    private readonly List<Employee> _employees = [];
     public IReadOnlyCollection<Employee> Employees => _employees;
-
 
     // Required by EF Core to rehydrate the entity from the database.
     private Project() { }

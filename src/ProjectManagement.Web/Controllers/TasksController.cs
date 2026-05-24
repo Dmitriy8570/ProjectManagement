@@ -11,7 +11,7 @@ using ProjectManagement.Web.ViewModels.Tasks;
 namespace ProjectManagement.Web.Controllers;
 
 [Route("tasks")]
-public class TasksController : Controller
+public sealed class TasksController : Controller
 {
     private readonly IMediator _mediator;
 
@@ -245,7 +245,7 @@ public class TasksController : Controller
         }
         catch (EntityNotFoundException)
         {
-            return Json(Array.Empty<object>());
+            return Json([]);
         }
     }
 

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DataAccess.Configurations;
 
-public class ProjectTaskConfiguration : IEntityTypeConfiguration<ProjectTask>
+public sealed class ProjectTaskConfiguration : IEntityTypeConfiguration<ProjectTask>
 {
     public void Configure(EntityTypeBuilder<ProjectTask> builder)
     {

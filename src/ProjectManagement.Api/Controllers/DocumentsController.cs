@@ -8,7 +8,7 @@ namespace ProjectManagement.Api.Controllers;
 
 [ApiController]
 [Produces("application/json")]
-public class DocumentsController : ControllerBase
+public sealed class DocumentsController : ControllerBase
 {
     private readonly IMediator _mediator;
 

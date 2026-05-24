@@ -4,7 +4,7 @@ using BusinessLogic.Projects;
 
 namespace BusinessLogic.Tasks;
 
-public class ProjectTask
+public sealed class ProjectTask
 {
     public int Id { get; private set; }
     public string Name { get; private set; } = default!;
