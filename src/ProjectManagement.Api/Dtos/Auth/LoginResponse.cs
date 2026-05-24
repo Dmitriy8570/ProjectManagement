@@ -16,5 +16,5 @@ public record CurrentUserDto
     public string Id { get; init; } = "";
     public string Email { get; init; } = "";
     public int EmployeeId { get; init; }
-    public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Roles { get; init; } = [];
 }

@@ -1,9 +1,9 @@
-﻿using DataAccess.Identity;
+using DataAccess.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace DataAccess.Configurations;
 
-public class IdentityUserConfiguration : IEntityTypeConfiguration<ApplicationUser>
+public sealed class IdentityUserConfiguration : IEntityTypeConfiguration<ApplicationUser>
 {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
     {

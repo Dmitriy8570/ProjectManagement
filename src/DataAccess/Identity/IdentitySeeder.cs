@@ -27,7 +27,7 @@ public static class IdentitySeeder
         }
 
         var config = sp.GetRequiredService<IConfiguration>();
-        var accounts = config.GetSection("Identity:Seed:Accounts").Get<SeedAccount[]>() ?? Array.Empty<SeedAccount>();
+        var accounts = config.GetSection("Identity:Seed:Accounts").Get<SeedAccount[]>() ?? [];
 
         if (accounts.Length == 0)
             return;

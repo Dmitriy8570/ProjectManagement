@@ -7,7 +7,7 @@ using ProjectManagement.Web.ViewModels.Account;
 namespace ProjectManagement.Web.Controllers;
 
 [Route("account")]
-public class AccountController : Controller
+public sealed class AccountController : Controller
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;

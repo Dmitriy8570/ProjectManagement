@@ -14,7 +14,7 @@ namespace ProjectManagement.Api.Controllers;
 [ApiController]
 [Authorize]
 [Produces("application/json")]
-public class DocumentsController : ControllerBase
+public sealed class DocumentsController : ControllerBase
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 

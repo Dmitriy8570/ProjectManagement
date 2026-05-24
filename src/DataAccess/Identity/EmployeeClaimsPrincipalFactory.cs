@@ -10,7 +10,7 @@ namespace DataAccess.Identity;
 /// claim to map the authenticated user back to a domain Employee — no
 /// per-request database round-trip.
 /// </summary>
-public class EmployeeClaimsPrincipalFactory
+public sealed class EmployeeClaimsPrincipalFactory
     : UserClaimsPrincipalFactory<ApplicationUser, IdentityRole>
 {
     public const string EmployeeIdClaim = "EmployeeId";

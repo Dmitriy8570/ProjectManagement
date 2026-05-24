@@ -1,11 +1,11 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using BusinessLogic.Common;
 using BusinessLogic.Projects;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repositories;
 
-public class ProjectRepository : IProjectRepository
+public sealed class ProjectRepository : IProjectRepository
 {
     private readonly AppDbContext _db;
 

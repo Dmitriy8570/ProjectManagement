@@ -17,7 +17,7 @@ namespace ProjectManagement.Api.Controllers;
 // per-employee project lists stay open to any authenticated user so the SPA
 // can render names that appear inside ProjectDtos (PM / participants); Search
 // is open to PM as well — the project wizard needs it.
-public class EmployeesController : ControllerBase
+public sealed class EmployeesController : ControllerBase
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 

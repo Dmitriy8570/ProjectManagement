@@ -17,7 +17,7 @@ namespace ProjectManagement.Web.Controllers;
 // stays open to any authenticated user so project-detail pages can link
 // to a person's profile without 403-ing for non-directors. Search stays
 // open to PM as well — it powers the project wizard's autocomplete.
-public class EmployeesController : Controller
+public sealed class EmployeesController : Controller
 {
     private readonly IMediator _mediator;
 

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagement.Api.Dtos.Auth;
 
-public class LoginRequest
+public sealed class LoginRequest
 {
     [Required, EmailAddress, MaxLength(100)]
     public string Email { get; set; } = "";

@@ -19,7 +19,7 @@ namespace ProjectManagement.Api.Controllers;
 //   Сотрудник         — sees ONLY projects they participate in, read-only.
 // Index filters at the query level; write-side endpoints add a resource
 // check after loading the project so URL guessing also returns 403.
-public class ProjectsController : ControllerBase
+public sealed class ProjectsController : ControllerBase
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 

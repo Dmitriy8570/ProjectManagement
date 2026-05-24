@@ -8,7 +8,7 @@ public record DeleteProjectCommand : IRequest
     public int Id { get; init; }
 }
 
-public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand>
+public sealed class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand>
 {
     private readonly IProjectRepository _projectRepository;
 

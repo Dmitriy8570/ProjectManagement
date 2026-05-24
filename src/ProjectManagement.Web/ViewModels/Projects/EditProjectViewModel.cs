@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagement.Web.ViewModels.Projects;
 
-public class EditProjectViewModel
+public sealed class EditProjectViewModel
 {
     public int Id { get; set; }
 

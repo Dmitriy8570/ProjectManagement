@@ -106,6 +106,18 @@ secrets.json
 *.key
 *.pem
 
+# docker-compose env file (commit .env.example, not .env)
+.env
+
+# User-uploaded project documents (runtime data, recreated on first upload).
+src/ProjectManagement.Api/uploads/
+src/ProjectManagement.Web/uploads/
+
+# =============================================================================
+# Frontend build output (Vite)
+# =============================================================================
+vue-client/dist/
+
 # =============================================================================
 # OS-generated files
 # =============================================================================

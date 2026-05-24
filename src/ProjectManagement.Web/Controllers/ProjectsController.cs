@@ -22,7 +22,7 @@ namespace ProjectManagement.Web.Controllers;
 // Index filters the list at the query level (no flash of forbidden rows);
 // write-side actions add a resource check after loading the project so URL
 // guessing also returns 403.
-public class ProjectsController : Controller
+public sealed class ProjectsController : Controller
 {
     private const string DirectorOrPm = Roles.Director + "," + Roles.ProjectManager;
 

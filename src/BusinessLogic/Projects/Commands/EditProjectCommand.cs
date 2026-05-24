@@ -12,7 +12,6 @@ namespace BusinessLogic.Projects.Commands;
 /// </summary>
 public record EditProjectRequest
 {
-
     [MaxLength(200)]
     public string? Name { get; init; }
 
@@ -42,7 +41,7 @@ public record EditProjectResponse
     public int Id { get; init; }
 }
 
-public class EditProjectCommandHandler : IRequestHandler<EditProjectCommand, EditProjectResponse>
+public sealed class EditProjectCommandHandler : IRequestHandler<EditProjectCommand, EditProjectResponse>
 {
     private static readonly string[] EligiblePmRoles = { Roles.Director, Roles.ProjectManager };
 

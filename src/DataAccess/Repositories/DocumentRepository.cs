@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repositories;
 
-public class DocumentRepository : IDocumentRepository
+public sealed class DocumentRepository : IDocumentRepository
 {
     private readonly AppDbContext _db;
 

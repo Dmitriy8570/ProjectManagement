@@ -13,7 +13,7 @@ public record EmployeeProjectsDto
     public IReadOnlyList<ProjectDto> ParticipantProjects { get; init; } = [];
 }
 
-public class GetEmployeeProjectsQueryHandler
+public sealed class GetEmployeeProjectsQueryHandler
     : IRequestHandler<GetEmployeeProjectsQuery, EmployeeProjectsDto>
 {
     private readonly IProjectRepository _repository;
