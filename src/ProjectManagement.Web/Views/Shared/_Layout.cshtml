@@ -44,13 +44,7 @@
            asp-controller="Employees" asp-action="Index">
             <i class="bi bi-people"></i>Employees
         </a>
-            @if (isDirector)
-            {
-                <a class="pm-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employees" ? "pm-nav-active" : "")"
-                   asp-controller="Employees" asp-action="Index">
-                    <i class="bi bi-people"></i>Employees
-                </a>
-            }
+            
 
             @if (isDirector || isPm)
             {
