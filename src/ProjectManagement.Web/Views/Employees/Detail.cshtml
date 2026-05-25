@@ -73,7 +73,7 @@
                                 <a asp-controller="Projects" asp-action="Detail" asp-route-id="@p.Id"
                                    class="text-decoration-none fw-semibold d-block">@p.Name</a>
                                 <small class="text-muted">
-                                    @p.StartDate.ToString("dd MMM yyyy") — @p.EndDate.ToString("dd MMM yyyy")
+                                    @p.StartDate.ToString("dd.MM.yyyy") — @p.EndDate.ToString("dd.MM.yyyy")
                                 </small>
                             </li>
                         }
@@ -104,7 +104,7 @@
                                 <a asp-controller="Projects" asp-action="Detail" asp-route-id="@p.Id"
                                    class="text-decoration-none fw-semibold d-block">@p.Name</a>
                                 <small class="text-muted">
-                                    @p.StartDate.ToString("dd MMM yyyy") — @p.EndDate.ToString("dd MMM yyyy")
+                                    @p.StartDate.ToString("dd.MM.yyyy") — @p.EndDate.ToString("dd.MM.yyyy")
                                 </small>
                             </li>
                         }
