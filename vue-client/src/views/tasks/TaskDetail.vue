@@ -39,6 +39,12 @@ function statusBadgeClass(s: ProjectTaskStatus) {
        : 'bg-secondary'
 }
 
+function statusLabel(s: ProjectTaskStatus) {
+  return s === 'Done' ? 'Done'
+       : s === 'InProgress' ? 'In Progress'
+       : 'To Do'
+}
+
 onMounted(load)
 </script>
 
@@ -83,7 +89,7 @@ onMounted(load)
               </dd>
               <dt class="col-sm-4 text-muted">Status</dt>
               <dd class="col-sm-8">
-                <span class="badge" :class="statusBadgeClass(task.status)">{{ task.status }}</span>
+                <span class="badge" :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
               </dd>
               <dt class="col-sm-4 text-muted">Priority</dt>
               <dd class="col-sm-8"><span class="badge bg-secondary fs-6">{{ task.priority }}</span></dd>

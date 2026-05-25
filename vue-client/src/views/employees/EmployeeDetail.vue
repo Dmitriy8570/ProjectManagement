@@ -2,27 +2,38 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { employeesApi } from '@/api/employees'
+import { tasksApi } from '@/api/tasks'
 import { useNotification } from '@/stores/notification'
-import type { EmployeeDto, EmployeeProjectsDto } from '@/types'
+import type { EmployeeDto, EmployeeProjectsDto, ProjectTaskDto, ProjectTaskStatus } from '@/types'
 
 const route  = useRoute()
 const router = useRouter()
 const notif  = useNotification()
 const id     = Number(route.params.id)
 
-const employee = ref<EmployeeDto | null>(null)
-const projects = ref<EmployeeProjectsDto>({ managedProjects: [], participantProjects: [] })
-const loading  = ref(true)
+const employee      = ref<EmployeeDto | null>(null)
+const projects      = ref<EmployeeProjectsDto>({ managedProjects: [], participantProjects: [] })
+const assignedTasks = ref<ProjectTaskDto[]>([])
+const loading       = ref(true)
+
+function taskStatusBadge(s: ProjectTaskStatus) {
+  return s === 'Done' ? 'bg-success' : s === 'InProgress' ? 'bg-primary' : 'bg-secondary'
+}
+function taskStatusLabel(s: ProjectTaskStatus) {
+  return s === 'Done' ? 'Done' : s === 'InProgress' ? 'In Progress' : 'To Do'
+}
 
 async function load() {
   loading.value = true
   try {
-    const [emp, proj] = await Promise.all([
+    const [emp, proj, tasks] = await Promise.all([
       employeesApi.getById(id),
       employeesApi.getProjects(id),
+      tasksApi.list({ assigneeId: id, pageSize: 50 }),
     ])
-    employee.value = emp
-    projects.value = proj
+    employee.value      = emp
+    projects.value      = proj
+    assignedTasks.value = tasks.items
   } catch { router.push('/employees') }
   finally { loading.value = false }
 }
@@ -125,6 +136,49 @@ onMounted(load)
               </li>
             </ul>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assigned Tasks -->
+    <div class="card mt-4">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-list-check me-2"></i>Assigned Tasks</span>
+        <span class="badge bg-secondary">{{ assignedTasks.length }}</span>
+      </div>
+      <div class="card-body p-0">
+        <div v-if="!assignedTasks.length" class="text-muted small px-3 py-3 mb-0">No tasks assigned.</div>
+        <div v-else class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Project</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="t in assignedTasks" :key="t.id">
+                <td>
+                  <RouterLink :to="`/tasks/${t.id}`" class="fw-semibold text-decoration-none">
+                    {{ t.name }}
+                  </RouterLink>
+                </td>
+                <td class="small">
+                  <RouterLink :to="`/projects/${t.projectId}`" class="text-decoration-none">
+                    {{ t.projectName }}
+                  </RouterLink>
+                </td>
+                <td class="text-center">
+                  <span class="badge" :class="taskStatusBadge(t.status)">{{ taskStatusLabel(t.status) }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-secondary">{{ t.priority }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

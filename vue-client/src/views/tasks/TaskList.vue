@@ -29,7 +29,14 @@ const projectName = computed(() => project.value?.name ?? '')
 
 function fmtDate(s: string) {
   if (!s) return '—'
-  return new Date(s).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const d = new Date(s)
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`
+}
+
+function statusLabel(s: ProjectTaskStatus) {
+  return s === 'Done' ? 'Done'
+       : s === 'InProgress' ? 'In Progress'
+       : 'To Do'
 }
 
 const filter = reactive({
@@ -237,6 +244,7 @@ onMounted(async () => {
               <th>Task</th>
               <th v-if="!fixedProjectId">Project</th>
               <th>Assignee</th>
+              <th>Author</th>
               <th>Status</th>
               <th>Priority</th>
               <th class="text-end">Actions</th>
@@ -259,10 +267,11 @@ onMounted(async () => {
                   {{ t.assignee.fullName }}
                 </RouterLink>
               </td>
+              <td class="small text-muted">{{ t.author.fullName }}</td>
               <td>
                 <div class="dropdown">
                   <button class="badge border-0" :class="statusBadgeClass(t.status)" data-bs-toggle="dropdown">
-                    {{ t.status }}
+                    {{ statusLabel(t.status) }}
                   </button>
                   <ul class="dropdown-menu">
                     <li><button class="dropdown-item" @click="quickStatus(t, 'ToDo')">To Do</button></li>

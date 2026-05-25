@@ -9,6 +9,13 @@
         _                            => "bg-secondary"
     };
 
+    string StatusLabel(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Done       => "Done",
+        ProjectTaskStatus.InProgress => "In Progress",
+        _                            => "To Do"
+    };
+
     var returnUrl = Url.Action("Detail", new { id = Model.Id });
 }
 
@@ -53,7 +60,7 @@
 
                     <dt class="col-sm-4 text-muted">Status</dt>
                     <dd class="col-sm-8">
-                        <span class="badge @StatusBadge(Model.Status)">@Model.Status</span>
+                        <span class="badge @StatusBadge(Model.Status)">@StatusLabel(Model.Status)</span>
                     </dd>
 
                     <dt class="col-sm-4 text-muted">Priority</dt>
@@ -107,7 +114,7 @@
                         <input type="hidden" name="status" value="@s" />
                         <input type="hidden" name="returnUrl" value="@returnUrl" />
                         <button type="submit" class="btn @btnClass w-100" @(Model.Status == s ? "disabled" : "")>
-                            @s
+                            @StatusLabel(s)
                         </button>
                     </form>
                 }

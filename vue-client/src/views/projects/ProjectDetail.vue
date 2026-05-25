@@ -96,12 +96,10 @@ async function deleteDoc(doc: ProjectDocumentDto) {
 
 function fmtDate(s: string) {
   if (!s) return '—'
-  return new Date(s).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const d = new Date(s)
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`
 }
 function fmtKb(b: number) { return (b / 1024).toFixed(1) }
-function fmtUploadedAt(s: string) {
-  return new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
 
 onMounted(load)
 </script>
@@ -238,7 +236,7 @@ onMounted(load)
                 {{ doc.fileName }}
               </a>
               <span class="text-muted small ms-2">
-                ({{ fmtKb(doc.sizeBytes) }} KB · {{ fmtUploadedAt(doc.uploadedAt) }})
+                ({{ fmtKb(doc.sizeBytes) }} KB)
               </span>
             </div>
             <button class="btn btn-sm btn-link text-danger p-0" @click="deleteDoc(doc)">

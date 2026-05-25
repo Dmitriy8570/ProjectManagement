@@ -11,6 +11,13 @@
         _                            => "bg-secondary"
     };
 
+    string StatusLabel(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Done       => "Done",
+        ProjectTaskStatus.InProgress => "In Progress",
+        _                            => "To Do"
+    };
+
     var currentUrl = Url.Action("Index", new
     {
         projectId = Model.ProjectId,
@@ -222,7 +229,7 @@ else
                             <td class="small">@t.Assignee.FullName</td>
                             <td class="small text-muted">@t.Author.FullName</td>
                             <td class="text-center">
-                                <span class="badge @StatusBadge(t.Status)">@t.Status</span>
+                                <span class="badge @StatusBadge(t.Status)">@StatusLabel(t.Status)</span>
                             </td>
                             <td class="text-center">
                                 <span class="badge bg-secondary">@t.Priority</span>
