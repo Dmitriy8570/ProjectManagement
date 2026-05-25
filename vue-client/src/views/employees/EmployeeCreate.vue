@@ -18,7 +18,7 @@ const saving     = ref(false)
 const errors     = ref<string[]>([])
 
 // Mirror of Identity's default password policy. Hardcoded for now — could be
-// fetched from the server if the rules ever diverge, but for the task ТЗ
+// fetched from the server if the rules ever diverge, but for this task
 // the defaults are stable.
 const passwordRules = [
   'at least 6 characters',
@@ -29,9 +29,9 @@ const passwordRules = [
 ]
 
 const roleOptions: { value: RoleName, label: string }[] = [
-  { value: Roles.Director,       label: 'Руководитель' },
-  { value: Roles.ProjectManager, label: 'Менеджер проекта' },
-  { value: Roles.Employee,       label: 'Сотрудник' },
+  { value: Roles.Director,       label: 'Director' },
+  { value: Roles.ProjectManager, label: 'Project Manager' },
+  { value: Roles.Employee,       label: 'Employee' },
 ]
 
 function validate(): boolean {
