@@ -18,7 +18,7 @@ const saving     = ref(false)
 const errors     = ref<string[]>([])
 
 // Mirror of Identity's default password policy. Hardcoded for now — could be
-// fetched from the server if the rules ever diverge, but for the task ТЗ
+// fetched from the server if the rules ever diverge, but for this task
 // the defaults are stable.
 const passwordRules = [
   'at least 6 characters',
@@ -29,9 +29,9 @@ const passwordRules = [
 ]
 
 const roleOptions: { value: RoleName, label: string }[] = [
-  { value: Roles.Director,       label: 'Руководитель' },
-  { value: Roles.ProjectManager, label: 'Менеджер проекта' },
-  { value: Roles.Employee,       label: 'Сотрудник' },
+  { value: Roles.Director,       label: 'Director' },
+  { value: Roles.ProjectManager, label: 'Project Manager' },
+  { value: Roles.Employee,       label: 'Employee' },
 ]
 
 function validate(): boolean {
@@ -40,8 +40,15 @@ function validate(): boolean {
   if (!lastName.value.trim())   errors.value.push('Last name is required.')
   if (!email.value.trim())      errors.value.push('Email is required.')
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) errors.value.push('Invalid email format.')
-  if (!password.value)          errors.value.push('Password is required.')
-  else if (password.value.length < 6) errors.value.push('Password must be at least 6 characters.')
+  if (!password.value) {
+    errors.value.push('Password is required.')
+  } else {
+    if (password.value.length < 6)          errors.value.push('Password must be at least 6 characters.')
+    if (!/[A-Z]/.test(password.value))      errors.value.push('Password must contain an uppercase letter (A-Z).')
+    if (!/[a-z]/.test(password.value))      errors.value.push('Password must contain a lowercase letter (a-z).')
+    if (!/[0-9]/.test(password.value))      errors.value.push('Password must contain a digit (0-9).')
+    if (!/[^a-zA-Z0-9]/.test(password.value)) errors.value.push('Password must contain a special character (e.g. !@#$%).')
+  }
   return !errors.value.length
 }
 

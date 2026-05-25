@@ -87,10 +87,13 @@ async function submit() {
       startDate: form.startDate, endDate: form.endDate,
       projectManagerId: form.projectManagerId, employeeIds: form.employeeIds, priority: form.priority,
     })
+    const uploadErrors: string[] = []
     for (const f of form.files) {
-      try { await documentsApi.upload(result.id, f) } catch { /* skip failed files */ }
+      try { await documentsApi.upload(result.id, f) }
+      catch (e: any) { uploadErrors.push(`${f.name}: ${e.message}`) }
     }
     notif.show(`Project «${form.name}» created.`)
+    if (uploadErrors.length) notif.show(uploadErrors.join(' | '), 'error')
     router.push(`/projects/${result.id}`)
   } catch (e: any) { notif.show(e.message, 'error') }
   finally { saving.value = false }

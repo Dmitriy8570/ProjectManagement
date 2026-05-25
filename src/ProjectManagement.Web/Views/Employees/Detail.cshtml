@@ -1,10 +1,27 @@
 @model EmployeeDto
 @using BusinessLogic.Identity
 @using BusinessLogic.Projects.Queries
+@using BusinessLogic.Tasks
 @{
     ViewData["Title"] = Model.FullName;
-    var projects = ViewBag.EmployeeProjects as EmployeeProjectsDto ?? new EmployeeProjectsDto();
-    var isDirector = User.IsInRole(Roles.Director);
+    var projects      = ViewBag.EmployeeProjects as EmployeeProjectsDto ?? new EmployeeProjectsDto();
+    var assignedTasks = ViewBag.AssignedTasks as IReadOnlyList<ProjectTaskDto> ?? [];
+    var isDirector    = User.IsInRole(Roles.Director);
+    var canManageTasks = User.IsInRole(Roles.Director) || User.IsInRole(Roles.ProjectManager);
+
+    string TaskStatusBadge(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Done       => "bg-success",
+        ProjectTaskStatus.InProgress => "bg-primary",
+        _                            => "bg-secondary"
+    };
+
+    string TaskStatusLabel(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Done       => "Done",
+        ProjectTaskStatus.InProgress => "In Progress",
+        _                            => "To Do"
+    };
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
@@ -81,7 +98,7 @@
                                 <a asp-controller="Projects" asp-action="Detail" asp-route-id="@p.Id"
                                    class="text-decoration-none fw-semibold d-block">@p.Name</a>
                                 <small class="text-muted">
-                                    @p.StartDate.ToString("dd MMM yyyy") — @p.EndDate.ToString("dd MMM yyyy")
+                                    @p.StartDate.ToString("dd.MM.yyyy") — @p.EndDate.ToString("dd.MM.yyyy")
                                 </small>
                             </li>
                         }
@@ -112,7 +129,7 @@
                                 <a asp-controller="Projects" asp-action="Detail" asp-route-id="@p.Id"
                                    class="text-decoration-none fw-semibold d-block">@p.Name</a>
                                 <small class="text-muted">
-                                    @p.StartDate.ToString("dd MMM yyyy") — @p.EndDate.ToString("dd MMM yyyy")
+                                    @p.StartDate.ToString("dd.MM.yyyy") — @p.EndDate.ToString("dd.MM.yyyy")
                                 </small>
                             </li>
                         }
@@ -126,4 +143,64 @@
         </div>
     </div>
 
+</div>
+
+<!-- Assigned Tasks -->
+<div class="card mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-list-check me-2"></i>Assigned Tasks</span>
+        <span class="badge bg-secondary">@assignedTasks.Count</span>
+    </div>
+    <div class="card-body p-0">
+        @if (assignedTasks.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Project</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Priority</th>
+                            @if (canManageTasks) { <th></th> }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in assignedTasks)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Tasks" asp-action="Detail" asp-route-id="@t.Id"
+                                       class="fw-semibold text-decoration-none">@t.Name</a>
+                                </td>
+                                <td class="small">
+                                    <a asp-controller="Projects" asp-action="Detail" asp-route-id="@t.ProjectId"
+                                       class="text-decoration-none">@t.ProjectName</a>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @TaskStatusBadge(t.Status)">@TaskStatusLabel(t.Status)</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">@t.Priority</span>
+                                </td>
+                                @if (canManageTasks)
+                                {
+                                    <td class="text-end">
+                                        <a asp-controller="Tasks" asp-action="Edit" asp-route-id="@t.Id"
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted small px-3 py-3 mb-0">No tasks assigned.</p>
+        }
+    </div>
 </div>

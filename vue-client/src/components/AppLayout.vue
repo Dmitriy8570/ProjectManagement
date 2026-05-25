@@ -30,7 +30,9 @@ function isActive(prefix: string) {
 // card looks cleaner and matches the Razor Sign-in page.
 const showChrome = computed(() => auth.isAuthenticated && !route.path.startsWith('/login'))
 
-const isDirector = computed(() => auth.hasRole(Roles.Director))
+const isDirector       = computed(() => auth.hasRole(Roles.Director))
+const isProjectManager = computed(() => auth.hasRole(Roles.ProjectManager))
+const canManageTasks   = computed(() => isDirector.value || isProjectManager.value)
 
 async function signOut() {
   auth.logout()
@@ -53,17 +55,17 @@ async function signOut() {
         <RouterLink v-if="isDirector" to="/employees" class="pm-nav-link" :class="{ active: isActive('/employees') }" @click="closeSb">
           <i class="bi bi-people"></i>Employees
         </RouterLink>
-        <RouterLink v-if="isDirector" to="/tasks" class="pm-nav-link" :class="{ active: isActive('/tasks') }" @click="closeSb">
+        <RouterLink to="/tasks" class="pm-nav-link" :class="{ active: isActive('/tasks') }" @click="closeSb">
           <i class="bi bi-list-check"></i>Tasks
         </RouterLink>
 
-        <template v-if="isDirector">
+        <template v-if="canManageTasks">
           <div class="pm-nav-divider"></div>
           <div class="pm-nav-section-label">Create</div>
-          <RouterLink to="/projects/create"  class="pm-nav-link" :class="{ active: route.path === '/projects/create' }"  @click="closeSb">
+          <RouterLink v-if="isDirector" to="/projects/create"  class="pm-nav-link" :class="{ active: route.path === '/projects/create' }"  @click="closeSb">
             <i class="bi bi-plus-circle"></i>New Project
           </RouterLink>
-          <RouterLink to="/employees/create" class="pm-nav-link" :class="{ active: route.path === '/employees/create' }" @click="closeSb">
+          <RouterLink v-if="isDirector" to="/employees/create" class="pm-nav-link" :class="{ active: route.path === '/employees/create' }" @click="closeSb">
             <i class="bi bi-person-plus"></i>Add Employee
           </RouterLink>
           <RouterLink to="/tasks/create" class="pm-nav-link" :class="{ active: route.path === '/tasks/create' }" @click="closeSb">

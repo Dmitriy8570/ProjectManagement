@@ -111,7 +111,15 @@ onMounted(async () => {
 <template>
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><RouterLink to="/tasks">Tasks</RouterLink></li>
+      <template v-if="preselectedProjectId">
+        <li class="breadcrumb-item"><RouterLink to="/projects">Projects</RouterLink></li>
+        <li class="breadcrumb-item">
+          <RouterLink :to="`/projects/${preselectedProjectId}/tasks`">Project Tasks</RouterLink>
+        </li>
+      </template>
+      <template v-else>
+        <li class="breadcrumb-item"><RouterLink to="/tasks">Tasks</RouterLink></li>
+      </template>
       <li class="breadcrumb-item active">New Task</li>
     </ol>
   </nav>

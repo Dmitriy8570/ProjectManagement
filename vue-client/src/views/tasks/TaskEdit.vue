@@ -75,6 +75,9 @@ onMounted(load)
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><RouterLink to="/tasks">Tasks</RouterLink></li>
+      <li v-if="projectId" class="breadcrumb-item">
+        <RouterLink :to="`/projects/${projectId}/tasks`">Project Tasks</RouterLink>
+      </li>
       <li class="breadcrumb-item"><RouterLink :to="`/tasks/${id}`">{{ taskName }}</RouterLink></li>
       <li class="breadcrumb-item active">Edit</li>
     </ol>
@@ -87,6 +90,13 @@ onMounted(load)
         <div class="card-body">
           <div v-if="errors.length" class="alert alert-danger mb-3">
             <div v-for="e in errors" :key="e">{{ e }}</div>
+          </div>
+
+          <div v-if="project" class="mb-3 small text-muted">
+            <i class="bi bi-folder2 me-1"></i>Project:
+            <RouterLink :to="`/projects/${projectId}`" class="text-decoration-none">
+              {{ project.name }}
+            </RouterLink>
           </div>
 
           <div class="row g-3">

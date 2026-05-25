@@ -1,12 +1,21 @@
 @model BusinessLogic.Tasks.ProjectTaskDto
+@using BusinessLogic.Identity
 @{
     ViewData["Title"] = Model.Name;
+    var canManageTasks = User.IsInRole(Roles.Director) || User.IsInRole(Roles.ProjectManager);
 
     string StatusBadge(ProjectTaskStatus s) => s switch
     {
         ProjectTaskStatus.Done       => "bg-success",
         ProjectTaskStatus.InProgress => "bg-primary",
         _                            => "bg-secondary"
+    };
+
+    string StatusLabel(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Done       => "Done",
+        ProjectTaskStatus.InProgress => "In Progress",
+        _                            => "To Do"
     };
 
     var returnUrl = Url.Action("Detail", new { id = Model.Id });
@@ -24,17 +33,20 @@
 
 <div class="pm-page-header">
     <h2>@Model.Name</h2>
-    <div class="d-flex gap-2">
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
-            <i class="bi bi-pencil me-1"></i>Edit
-        </a>
-        <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
-              onsubmit="return confirm('Delete task «@Model.Name»? This cannot be undone.')">
-            <button type="submit" class="btn btn-outline-danger">
-                <i class="bi bi-trash me-1"></i>Delete
-            </button>
-        </form>
-    </div>
+    @if (canManageTasks)
+    {
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil me-1"></i>Edit
+            </a>
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+                  onsubmit="return confirm('Delete task «@Model.Name»? This cannot be undone.')">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+            </form>
+        </div>
+    }
 </div>
 
 <div class="row g-4">
@@ -53,7 +65,7 @@
 
                     <dt class="col-sm-4 text-muted">Status</dt>
                     <dd class="col-sm-8">
-                        <span class="badge @StatusBadge(Model.Status)">@Model.Status</span>
+                        <span class="badge @StatusBadge(Model.Status)">@StatusLabel(Model.Status)</span>
                     </dd>
 
                     <dt class="col-sm-4 text-muted">Priority</dt>
@@ -107,7 +119,7 @@
                         <input type="hidden" name="status" value="@s" />
                         <input type="hidden" name="returnUrl" value="@returnUrl" />
                         <button type="submit" class="btn @btnClass w-100" @(Model.Status == s ? "disabled" : "")>
-                            @s
+                            @StatusLabel(s)
                         </button>
                     </form>
                 }

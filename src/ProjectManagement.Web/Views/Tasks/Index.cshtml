@@ -1,14 +1,23 @@
 @model TaskListViewModel
+@using BusinessLogic.Identity
 @{
     ViewData["Title"] = Model.ProjectId.HasValue
         ? $"Tasks — {Model.ProjectName}"
         : "Tasks";
+    var canManageTasks = User.IsInRole(Roles.Director) || User.IsInRole(Roles.ProjectManager);
 
     string StatusBadge(ProjectTaskStatus s) => s switch
     {
         ProjectTaskStatus.Done       => "bg-success",
         ProjectTaskStatus.InProgress => "bg-primary",
         _                            => "bg-secondary"
+    };
+
+    string StatusLabel(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Done       => "Done",
+        ProjectTaskStatus.InProgress => "In Progress",
+        _                            => "To Do"
     };
 
     var currentUrl = Url.Action("Index", new
@@ -78,9 +87,12 @@
         @(Model.ProjectId.HasValue ? "Project Tasks" : "All Tasks")
         <span class="badge bg-secondary ms-2 fs-6">@Model.TotalCount</span>
     </h2>
-    <a asp-action="Create" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>New Task
-    </a>
+    @if (canManageTasks)
+    {
+        <a asp-action="Create" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>New Task
+        </a>
+    }
 </div>
 
 <div class="d-flex gap-2 mb-4 flex-wrap">
@@ -176,7 +188,9 @@
 {
     <div class="text-center py-5 text-muted">
         <i class="bi bi-clipboard-x" style="font-size:3rem;"></i>
-        <p class="mt-2">No tasks found. <a asp-action="Create" asp-route-projectId="@Model.ProjectId">Create one?</a></p>
+        <p class="mt-2">No tasks found.
+            @if (canManageTasks) { <a asp-action="Create" asp-route-projectId="@Model.ProjectId">Create one?</a> }
+        </p>
     </div>
 }
 else
@@ -222,22 +236,25 @@ else
                             <td class="small">@t.Assignee.FullName</td>
                             <td class="small text-muted">@t.Author.FullName</td>
                             <td class="text-center">
-                                <span class="badge @StatusBadge(t.Status)">@t.Status</span>
+                                <span class="badge @StatusBadge(t.Status)">@StatusLabel(t.Status)</span>
                             </td>
                             <td class="text-center">
                                 <span class="badge bg-secondary">@t.Priority</span>
                             </td>
                             <td class="text-end" style="white-space:nowrap;">
-                                <a asp-action="Edit" asp-route-id="@t.Id"
-                                   class="btn btn-sm btn-outline-secondary me-1" title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
-                                      onsubmit="return confirm('Delete task «@t.Name»? This cannot be undone.')">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
+                                @if (canManageTasks)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@t.Id"
+                                       class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
+                                          onsubmit="return confirm('Delete task «@t.Name»? This cannot be undone.')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                }
                             </td>
                         </tr>
                     }

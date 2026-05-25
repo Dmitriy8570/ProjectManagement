@@ -229,9 +229,12 @@ onMounted(load)
             <tr>
               <th>Name</th>
               <th>Customer</th>
+              <th>Executor</th>
               <th>Manager</th>
-              <th>Dates</th>
-              <th>Priority</th>
+              <th>Start</th>
+              <th>End</th>
+              <th class="text-center">Priority</th>
+              <th class="text-center">Team</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
@@ -242,14 +245,21 @@ onMounted(load)
                   {{ p.name }}
                 </RouterLink>
               </td>
-              <td class="text-muted">{{ p.customerCompany }}</td>
+              <td class="text-muted small">{{ p.customerCompany }}</td>
+              <td class="text-muted small">{{ p.executingCompany }}</td>
               <td>
                 <RouterLink :to="`/employees/${p.projectManager.id}`" class="text-decoration-none small">
                   {{ p.projectManager.fullName }}
                 </RouterLink>
               </td>
-              <td class="small text-muted">{{ fmtDate(p.startDate) }} — {{ fmtDate(p.endDate) }}</td>
-              <td><span class="badge bg-secondary">{{ p.priority }}</span></td>
+              <td class="small text-muted">{{ fmtDate(p.startDate) }}</td>
+              <td class="small text-muted">{{ fmtDate(p.endDate) }}</td>
+              <td class="text-center"><span class="badge bg-secondary">{{ p.priority }}</span></td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border">
+                  <i class="bi bi-people me-1"></i>{{ p.employees.length }}
+                </span>
+              </td>
               <td class="text-end">
                 <RouterLink
                   v-if="canEditRow(p)"

@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { tasksApi } from '@/api/tasks'
 import { useNotification } from '@/stores/notification'
+import { useAuth } from '@/stores/auth'
+import { Roles } from '@/types'
 import type { ProjectTaskDto, ProjectTaskStatus } from '@/types'
 
 const route  = useRoute()
 const router = useRouter()
 const notif  = useNotification()
+const auth   = useAuth()
 const id     = Number(route.params.id)
+
+const canManage = computed(() =>
+  auth.hasRole(Roles.Director) || auth.hasRole(Roles.ProjectManager)
+)
 
 const task    = ref<ProjectTaskDto | null>(null)
 const loading = ref(true)
@@ -39,6 +46,12 @@ function statusBadgeClass(s: ProjectTaskStatus) {
        : 'bg-secondary'
 }
 
+function statusLabel(s: ProjectTaskStatus) {
+  return s === 'Done' ? 'Done'
+       : s === 'InProgress' ? 'In Progress'
+       : 'To Do'
+}
+
 onMounted(load)
 </script>
 
@@ -59,7 +72,7 @@ onMounted(load)
 
     <div class="pm-page-header">
       <h2>{{ task.name }}</h2>
-      <div class="d-flex gap-2">
+      <div v-if="canManage" class="d-flex gap-2">
         <RouterLink :to="`/tasks/${id}/edit`" class="btn btn-outline-secondary">
           <i class="bi bi-pencil me-1"></i>Edit
         </RouterLink>
@@ -83,7 +96,7 @@ onMounted(load)
               </dd>
               <dt class="col-sm-4 text-muted">Status</dt>
               <dd class="col-sm-8">
-                <span class="badge" :class="statusBadgeClass(task.status)">{{ task.status }}</span>
+                <span class="badge" :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
               </dd>
               <dt class="col-sm-4 text-muted">Priority</dt>
               <dd class="col-sm-8"><span class="badge bg-secondary fs-6">{{ task.priority }}</span></dd>

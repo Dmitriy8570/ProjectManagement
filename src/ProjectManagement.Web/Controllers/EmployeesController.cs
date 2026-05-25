@@ -4,6 +4,8 @@ using BusinessLogic.Employees.Commands;
 using BusinessLogic.Employees.Queries;
 using BusinessLogic.Identity;
 using BusinessLogic.Projects.Queries;
+using BusinessLogic.Tasks;
+using BusinessLogic.Tasks.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,10 +42,15 @@ public sealed class EmployeesController : Controller
         {
             var employeeTask = _mediator.Send(new GetEmployeeByIdQuery { Id = id }, ct);
             var projectsTask = _mediator.Send(new GetEmployeeProjectsQuery { EmployeeId = id }, ct);
+            var tasksTask    = _mediator.Send(new GetProjectTasksQuery
+            {
+                Filter = new ProjectTaskListFilter { AssigneeId = id, PageSize = 50 }
+            }, ct);
 
-            await Task.WhenAll(employeeTask, projectsTask);
+            await Task.WhenAll(employeeTask, projectsTask, tasksTask);
 
             ViewBag.EmployeeProjects = projectsTask.Result;
+            ViewBag.AssignedTasks    = tasksTask.Result.Items;
             return View(employeeTask.Result);
         }
         catch (EntityNotFoundException)

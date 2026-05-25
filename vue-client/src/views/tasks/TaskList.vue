@@ -4,11 +4,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { tasksApi } from '@/api/tasks'
 import { projectsApi } from '@/api/projects'
 import { useNotification } from '@/stores/notification'
+import { useAuth } from '@/stores/auth'
+import { Roles } from '@/types'
 import type { ProjectTaskDto, ProjectTaskStatus, ProjectDto } from '@/types'
 
 const router = useRouter()
 const route  = useRoute()
 const notif  = useNotification()
+const auth   = useAuth()
+
+const canManage = computed(() =>
+  auth.hasRole(Roles.Director) || auth.hasRole(Roles.ProjectManager)
+)
 
 // When the list is rendered under /projects/:id/tasks the project context is
 // fixed; otherwise this is the global task list across all projects.
@@ -87,6 +94,12 @@ function statusBadgeClass(s: ProjectTaskStatus) {
   return s === 'Done' ? 'bg-success'
        : s === 'InProgress' ? 'bg-primary'
        : 'bg-secondary'
+}
+
+function statusLabel(s: ProjectTaskStatus) {
+  return s === 'Done' ? 'Done'
+       : s === 'InProgress' ? 'In Progress'
+       : 'To Do'
 }
 
 const createPath = computed(() =>
@@ -216,7 +229,7 @@ onMounted(async () => {
       <button class="btn btn-outline-secondary" @click="filterOpen = true">
         <i class="bi bi-sliders me-1"></i>Filters
       </button>
-      <RouterLink :to="createPath" class="btn btn-primary">
+      <RouterLink v-if="canManage" :to="createPath" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i>New Task
       </RouterLink>
     </div>
@@ -237,6 +250,7 @@ onMounted(async () => {
               <th>Task</th>
               <th v-if="!fixedProjectId">Project</th>
               <th>Assignee</th>
+              <th>Author</th>
               <th>Status</th>
               <th>Priority</th>
               <th class="text-end">Actions</th>
@@ -259,10 +273,18 @@ onMounted(async () => {
                   {{ t.assignee.fullName }}
                 </RouterLink>
               </td>
+              <td class="small text-muted">
+                <RouterLink :to="`/employees/${t.author.id}`" class="text-decoration-none small text-muted">
+                  {{ t.author.fullName }}
+                </RouterLink>
+              </td>
               <td>
                 <div class="dropdown">
-                  <button class="badge border-0" :class="statusBadgeClass(t.status)" data-bs-toggle="dropdown">
-                    {{ t.status }}
+                  <button class="badge border-0 d-inline-flex align-items-center gap-1"
+                          :class="statusBadgeClass(t.status)"
+                          data-bs-toggle="dropdown"
+                          :title="'Change status'">
+                    {{ statusLabel(t.status) }}<i class="bi bi-chevron-down" style="font-size:.65em;"></i>
                   </button>
                   <ul class="dropdown-menu">
                     <li><button class="dropdown-item" @click="quickStatus(t, 'ToDo')">To Do</button></li>
@@ -273,12 +295,14 @@ onMounted(async () => {
               </td>
               <td><span class="badge bg-secondary">{{ t.priority }}</span></td>
               <td class="text-end">
-                <RouterLink :to="`/tasks/${t.id}/edit`" class="btn btn-sm btn-outline-secondary me-1">
-                  <i class="bi bi-pencil"></i>
-                </RouterLink>
-                <button class="btn btn-sm btn-outline-danger" @click="deleteTask(t)">
-                  <i class="bi bi-trash"></i>
-                </button>
+                <template v-if="canManage">
+                  <RouterLink :to="`/tasks/${t.id}/edit`" class="btn btn-sm btn-outline-secondary me-1">
+                    <i class="bi bi-pencil"></i>
+                  </RouterLink>
+                  <button class="btn btn-sm btn-outline-danger" @click="deleteTask(t)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </template>
               </td>
             </tr>
           </tbody>
