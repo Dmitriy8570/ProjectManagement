@@ -98,9 +98,9 @@
 │  Domain entities (Project, Employee, ProjectDocument)       │
 │  + DomainGuard + Commands/Queries +                         │
 │  Repository interfaces.                                     │
-└─────────────────────────┬───────────────────────────────────┘
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
+└─────────────────────────────────────────────────────────────┘
+                          ▲
+┌─────────────────────────┴───────────────────────────────────┐
 │  DataAccess                                                 │
 │  AppDbContext (DbContext), EF Core Fluent configurations,   │
 │  Repositories, Migrations, LocalFileStorage.                │
